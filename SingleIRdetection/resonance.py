@@ -144,23 +144,16 @@ class ResonanceKid():
                 amps.append(np.sqrt(splitted[1]**2 + splitted[2]**2))
                 phases.append(np.arctan(splitted[1] / splitted[2]))
 
-        self.freqs = freqs
-        self.amps = amps
-        self.amp_i = amp_i
-        self.amp_q = amp_q
-        self.phases = phases
+        self.freqs = np.array(freqs)
+        self.amps = np.array(amps)
+        self.amp_i = np.array(amp_i)
+        self.amp_q = np.array(amp_q)
+        self.phases = np.array(phases)
 
-        self._min_freq = self.freqs[self.amps.index(min(self.amps))]
+        self._min_freq = self.freqs[np.argmin(self.amps)]
         self._amp_max = self.amps[0]
 
-        self.err_amps = [0.01]*len(self.amps)
-
-        self.freqs = np.array(self.freqs)
-        self.amp_i = np.array(self.amp_i)
-        self.amp_q = np.array(self.amp_q)
-        self.amps = np.array(self.amps)
-        self.err_amps = np.array(self.err_amps)
-        self.phases = np.array(self.phases)
+        self.err_amps = np.array([0.01]*len(self.amps))
 
         if self.norm:
             self.amps = self.amps / self.amp_max
@@ -175,7 +168,6 @@ class ResonanceKid():
         m_obj = self.minuit_obj
         self.fit_result = m_obj
         return m_obj.migrad()
-
 
     def plot_fit(self):
         plt.scatter(self.freqs, self.amps, s=0.5)
