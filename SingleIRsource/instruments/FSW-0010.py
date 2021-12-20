@@ -3,8 +3,8 @@ import serial
 
 class Synthetizer:
 
-    def __init__(self, device_address):
-        self.device = serial.Serial(device_address, baudrate=115200, timeout=1.5, stopbits=1, parity='N') #stopbits
+    def __init__(self, deviceAddress):
+        self.device = serial.Serial(deviceAddress, baudrate=115200, timeout=1.5, stopbits=1, parity='N')       #stopbits
 
     def write(self, msg):
         self.device.write(bytes(msg))
@@ -27,11 +27,11 @@ class Synthetizer:
             freq = float(freq)/1e12
         return freq
 
-    def setFreq(self,freq):  # default units in GHz
+    def setFreq(self,freq):     # default units in GHz
         if (freq < 0.5 or freq > 10):
             return "Invalid frequency! FSW-0010 supports [0.5 GHZ, 10 GHz]"
-        cmd_string = 'FREQ ' + str(freq) + 'GHz\r'
-        self.write(str.encode(cmd_string))
+        cmdString = 'FREQ ' + str(freq) + 'GHz\r'
+        self.write(str.encode(cmdString))
         return "Frequency set to "+str(freq)+" GHz."
 
     def close(self):
@@ -51,5 +51,5 @@ class Synthetizer:
             self.write(b'ROSC:SOUR INT\r')
             return "Switching to internal source (INT)"
     
-    def getTemp(self):    #Temperature in Celsius degrees
+    def getTemp(self):      #Temperature in Celsius degrees
         return self.ask(b'DIAG:MEAS? 21\r')
