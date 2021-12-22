@@ -24,3 +24,5 @@ source .venv/bin/activate.
 pip install -r requirements.txt
 ```
 4. To exit the virtual environment use the deactivate command.
+
+N.B.: if you don't want to create a new environment (needed to avoid conflicts), you can just do step 3.

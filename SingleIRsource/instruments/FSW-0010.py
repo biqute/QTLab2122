@@ -1,7 +1,7 @@
 import serial
 #import time
 
-class Synthetizer:
+class FSWSynt (object):
 
     def __init__(self, deviceAddress):
         self.device = serial.Serial(deviceAddress, baudrate=115200, timeout=1.5, stopbits=1, parity='N')       #stopbits
@@ -17,17 +17,14 @@ class Synthetizer:
         self.write(msg)
         return self.read()
 
-    def getID(self):
+    def get_ID(self):
         return self.ask(b'*IDN?\r')
     
-    def getFreq(self, G=True):
+    def get_freq(self, G=True):
         freq = self.ask(b'FREQ?\r')
-        #print(freq)
-        if G:
-            freq = float(freq)/1e12
-        return freq
+        return float(freq)/1e12 if G else freq
 
-    def setFreq(self,freq):     # default units in GHz
+    def set_freq(self,freq):     # default units in GHz
         if (freq < 0.5 or freq > 10):
             return "Invalid frequency! FSW-0010 supports [0.5 GHZ, 10 GHz]"
         cmdString = 'FREQ ' + str(freq) + 'GHz\r'
@@ -40,16 +37,12 @@ class Synthetizer:
     def connect(self):
         return self.connect()
 
-    def getRefSource(self):
+    def get_ref_source(self):
         return self.ask(b'ROSC:SOUR?\r')
 
-    def switchRefSource(self):
-        if "INT" in self.getRefSource():
-            self.write(b'ROSC:SOUR EXT\r')
-            return "Switching to external source (EXT)"
-        else: 
-            self.write(b'ROSC:SOUR INT\r')
-            return "Switching to internal source (INT)"
+    def switch_ref_source(self):
+        self.write(b'ROSC:SOUR EXT\r' if "INT" in self.get_ref_source() else b'ROSC:SOUR INT\r')
+        return "Switching to external source (EXT)" if "INT" in self.get_ref_source() else "Switching to internal source (INT)"
     
-    def getTemp(self):      #Temperature in Celsius degrees
+    def get_temp(self):      #Temperature in Celsius degrees
         return self.ask(b'DIAG:MEAS? 21\r')
