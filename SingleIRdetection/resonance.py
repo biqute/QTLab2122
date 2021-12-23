@@ -1,8 +1,9 @@
-from typing import List
-
 import numpy as np
 from matplotlib import pyplot as plt
 from iminuit import cost, Minuit
+
+from scipy.constants import k, hbar
+from scipy.special import kv, iv
 
 class ResonanceKid():
     """
@@ -14,73 +15,32 @@ class ResonanceKid():
 
     def __init__(
         self,
-        filename: str = None,
-        norm: bool = True,
-        shift: bool = True,
-        init_parameters: List[float] = None
+        filename,
+        norm = True,
+        shift = True
     ):
         self._fit_result = None
 
-        self._norm = norm
-        self._shift = shift
+        self._readfile(filename, norm, shift)
 
-        if init_parameters is None:
-            init_parameters = [1, 1e-10, 1e-15, 1e-20, 1e3, 1e3, 0.15]
+        def model(val_x, val_a, val_b, val_c, val_d, val_q, val_qc, val_phi):
+            pol = val_a + val_b*val_x + val_c*val_x**2 + val_d*val_x**3
+            quad = 1 - (val_q/val_qc)*np.exp(1j*val_phi)/(1-2j*val_q*val_x)
 
-        self.init_parameters = init_parameters
-
-        if filename is not None:
-            self._readfile(filename)
-
-    @property
-    def norm(self):
-        return self._norm
-
-    @property
-    def shift(self):
-        return self._shift
+            return pol*abs(quad)
+        self._fit_function = model
 
     @property
     def freqs(self):
         return self._freqs
-    @freqs.setter
-    def freqs(self, value):
-        self._freqs = value
 
     @property
     def amps(self):
         return self._amps
-    @amps.setter
-    def amps(self, value):
-        self._amps = value
 
     @property
     def err_amps(self):
         return self._err_amps
-    @err_amps.setter
-    def err_amps(self, value):
-        self._err_amps = value
-
-    @property
-    def phases(self):
-        return self._phases
-    @phases.setter
-    def phases(self, value):
-        self._phases = value
-
-    @property
-    def amp_i(self):
-        return self._amp_i
-    @amp_i.setter
-    def amp_i(self, value):
-        self._amp_i = value
-
-    @property
-    def amp_q(self):
-        return self._amp_q
-    @amp_q.setter
-    def amp_q(self, value):
-        self._amp_q = value
 
     @property
     def min_freq(self):
@@ -91,11 +51,11 @@ class ResonanceKid():
         return self._amp_max
 
     @property
-    def init_parameters(self):
-        return self._init_parameters
-    @init_parameters.setter
-    def init_parameters(self, value):
-        self._init_parameters = value
+    def chi2(self):
+        if self.fit_result is None:
+            print("No fit found: doing it now")
+            _ = self.fit()
+        return self.fit_result.fval / (len(self.amps) - self.fit_result.npar)
 
     @property
     def fit_result(self):
@@ -104,18 +64,6 @@ class ResonanceKid():
     def fit_result(self, value):
         self._fit_result = value
 
-    @property
-    def _fit_function(self):
-        def model(val_x, val_a, val_b, val_c, val_d, val_q, val_qc, val_phi):
-            pol = val_a + val_b*val_x + val_c*val_x**2 + val_d*val_x**3
-            quad = 1 - (val_q/val_qc)*np.exp(1j*val_phi)/(1-2j*val_q*val_x)
-
-            return pol*abs(quad)
-        return model
-
-    @property
-    def _cost_func(self):
-       return cost.LeastSquares(self.freqs, self.amps, self.err_amps, self._fit_function)
 
     @property
     def chi2(self):
@@ -124,48 +72,36 @@ class ResonanceKid():
             _ = self.fit()
         return self.fit_result.fval / (len(self.amps) - self.fit_result.npar)
 
-    @property
-    def minuit_obj(self):
-        return Minuit(self._cost_func, *self.init_parameters)
-
-    def _readfile(self, filename):
+    def _readfile(self, filename, norm, shift):
         freqs = []
-        amp_i = []
-        amp_q = []
         amps = []
-        phases = []
 
         with open(filename, encoding='utf-8') as file:
             for line in file:
                 splitted = [float(x) for x in line.split('\t')]
                 freqs.append(splitted[0])
-                amp_i.append(splitted[1])
-                amp_q.append(splitted[2])
                 amps.append(np.sqrt(splitted[1]**2 + splitted[2]**2))
-                phases.append(np.arctan(splitted[1] / splitted[2]))
 
-        self.freqs = np.array(freqs)
-        self.amps = np.array(amps)
-        self.amp_i = np.array(amp_i)
-        self.amp_q = np.array(amp_q)
-        self.phases = np.array(phases)
+        self._min_freq = freqs[amps.index(min(amps))]
+        self._amp_max = amps[0]
 
-        self._min_freq = self.freqs[np.argmin(self.amps)]
-        self._amp_max = self.amps[0]
+        err_amps = [0.01]*len(amps)
 
-        self.err_amps = np.array([0.01]*len(self.amps))
+        self._freqs = np.array(freqs)
+        self._amps = np.array(amps)
+        self._err_amps = np.array(err_amps)
 
-        if self.norm:
-            self.amps = self.amps / self.amp_max
+        if norm:
+            self._amps = self.amps / self.amp_max
 
-        if self.shift:
-            self.freqs = (self.freqs - self.min_freq)/self.min_freq
+        if shift:
+            self._freqs = (self.freqs - self.min_freq)/self.min_freq
 
-    def set_file(self, filename):
-        self._readfile(filename)
-
-    def fit(self):
-        m_obj = self.minuit_obj
+    def fit(self, init_parameters = None):
+        if init_parameters is None:
+            init_parameters = [1, 1e-10, 1e-15, 1e-20, 1e3, 1e3, 0.15]
+        cost_func = cost.LeastSquares(self.freqs, self.amps, self.err_amps, self._fit_function)
+        m_obj = Minuit(cost_func, *init_parameters)
         self.fit_result = m_obj
         return m_obj.migrad()
 
@@ -178,18 +114,110 @@ class ResonanceKid():
                  color='red', label='fit')
         plt.show()
 
-    def plot_phase(self):
-        plt.scatter(self.freqs, self.phases, s=0.5)
-        plt.show()
-
     def plot_amp(self):
         plt.scatter(self.freqs, self.amps, s=0.5)
         plt.show()
 
-    def plot_amp_i(self):
-        plt.scatter(self.freqs, self.amp_i, s=0.5)
+class GapFinder():
+
+    def __init__(
+        self,
+        filename,
+        omega = 3.03*1e9,
+        inv_q_0 = 4.791014e-5,
+        alpha = 0.66
+    ):
+        self._fit_result = None
+
+        self.omega = omega
+        self.inv_q_0 = inv_q_0
+        self.alpha = alpha
+
+        self._readfile(filename)
+
+        def model(val_t, delta0):
+            val_t = val_t * 1e-3
+            omega = self.omega
+            xi = hbar * omega / (2 * k * val_t)
+            ourk = 1.380649
+            sigma1 = 4*np.exp(-delta0/(ourk*val_t))*np.sinh(xi)*kv(0, xi)
+            sigma2 = np.pi*(1-2*np.exp(-delta0/(ourk*val_t))*np.exp(-xi)*iv(0,-xi))
+            return self.inv_q_0 + (self.alpha/2)*sigma1/sigma2
+        self._fit_function = model
+
+    @property
+    def omega(self):
+        return self._omega
+    @omega.setter
+    def omega(self, value):
+        self._omega = value
+
+    @property
+    def inv_q_0(self):
+        return self._inv_q_0
+    @inv_q_0.setter
+    def inv_q_0(self, value):
+        self._inv_q_0 = value
+
+    @property
+    def alpha(self):
+        return self._alpha
+    @alpha.setter
+    def alpha(self, value):
+        self._alpha = value
+
+    @property
+    def fit_result(self):
+        return self._fit_result
+    @fit_result.setter
+    def fit_result(self, value):
+        self._fit_result = value
+
+    @property
+    def temps(self):
+        return self._temps
+    @property
+    def q_inv(self):
+        return self._q_inv
+    @property
+    def err_q_inv(self):
+        return self._err_q_inv
+
+    def _readfile(self, filename):
+        temps = []
+        q_inv = []
+        err_q_inv = []
+
+        with open(filename, encoding='utf-8') as file:
+            for line in file:
+                splitted = [float(x) for x in line.split(' ')]
+                temps.append(splitted[0])
+                q_inv.append(splitted[1])
+                err_q_inv.append(splitted[2])
+
+        self._temps = np.array(temps, dtype='float64')
+        self._q_inv = np.array(q_inv, dtype='float64')
+        self._err_q_inv = np.array(err_q_inv, dtype='float64')
+
+    def fit(self, init_parameters = None):
+        if init_parameters is None:
+            init_parameters = [3.5e-23]
+        cost_func = cost.LeastSquares(self.temps, self.q_inv, self.err_q_inv, self._fit_function)
+        m_obj = Minuit(cost_func, *init_parameters)
+        m_obj.limits['delta0'] = (0, None)
+        self.fit_result = m_obj
+        return m_obj.migrad()
+
+    def plot_fit(self):
+        plt.scatter(self.temps, self.q_inv, s=0.8)
+        if self.fit_result is None:
+            print("No fit found: doing it now")
+            _ = self.fit()
+        plt.plot(self.temps, self._fit_function(self.temps, *self.fit_result.values),
+                 color='red', label='fit')
         plt.show()
 
-    def plot_amp_q(self):
-        plt.scatter(self.freqs, self.amp_q, s=0.5)
-        plt.show()
+
+
+
+
