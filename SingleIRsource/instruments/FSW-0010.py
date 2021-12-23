@@ -1,10 +1,10 @@
 import serial
 #import time
 
-class FSWSynt (object):
+class FSWSynt(object):
 
-    def __init__(self, deviceAddress):
-        self.device = serial.Serial(deviceAddress, baudrate=115200, timeout=1.5, stopbits=1, parity='N')       #stopbits
+    def __init__(self, device_address):
+        self.device = serial.Serial(device_address, baudrate=115200, timeout=1.5, stopbits=1, parity='N')       #stopbits
 
     def write(self, msg):
         self.device.write(bytes(msg))
@@ -27,8 +27,8 @@ class FSWSynt (object):
     def set_freq(self,freq):     # default units in GHz
         if (freq < 0.5 or freq > 10):
             return "Invalid frequency! FSW-0010 supports [0.5 GHZ, 10 GHz]"
-        cmdString = 'FREQ ' + str(freq) + 'GHz\r'
-        self.write(str.encode(cmdString))
+        cmd_string = 'FREQ ' + str(freq) + 'GHz\r'
+        self.write(str.encode(cmd_string))
         return "Frequency set to "+str(freq)+" GHz."
 
     def close(self):

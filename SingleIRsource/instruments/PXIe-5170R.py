@@ -5,10 +5,10 @@
 
 import niscope
 
-class SignalAcquisition:
+class PXIeSignalAcq(object):
 
-    def __init__(self, deviceAddress):
-        self.session = niscope.Session(deviceAddress)
+    def __init__(self, device_address):
+        self.session = niscope.Session(device_address)
     
     # Set records (sampling frequency, rate, lenght, width,...)
     # Set triggers (edge, immediate, digital, negative, positive,...)
