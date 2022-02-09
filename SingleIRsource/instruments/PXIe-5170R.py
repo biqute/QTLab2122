@@ -2,6 +2,7 @@
 # Code example: https://github.com/js216/CeNTREX/blob/50282c7d3dfd4d47c3f96a6cde1b1cbb539821b5/drivers/PXIe5171.py
 # niscope module docs: https://nimi-python.readthedocs.io/en/master/niscope.html
 # niscope module examples: https://nimi-python.readthedocs.io/en/master/niscope/examples.html
+# https://manualzz.com/doc/6830056/ni-scope-software-user-manual
 
 import niscope
 import argparse
@@ -12,7 +13,7 @@ import pandas as pd
 
 class PXIeSignalAcq(object):
 
-    def __init__(self, device_address, trigger=0, channels=[0,1], records=3, sample_rate=5e7, length=3000):
+    def __init__(self, device_address, trigger=0, channels=[0], records=3, sample_rate=5e7, length=10):
         try:
             self.session = niscope.Session(device_address)
             print('Connesso')
@@ -23,12 +24,21 @@ class PXIeSignalAcq(object):
         self.trigger = trigger
         self.channels = channels
         self.records = records
+
         self.session.configure_vertical(range = 5, coupling=niscope.VerticalCoupling.DC)
         self.session.configure_horizontal_timing(min_sample_rate=sample_rate, min_num_pts=length, ref_position=50.0, num_records=records, enforce_realtime=True)
 
+        self.session.trigger_type = niscope.TriggerType.EDGE
+        self.session.trigger_source = "0"
+        self.session.trigger_slope = niscope.TriggerSlope.POSITIVE
+        self.session.trigger_level = 0.5
+        self.session.trigger_delay_time = 0.0
+
+        self.session.initiate()
+
     def read(self):
         wf = [] 
-        wf.extend([self.session.channels[i].read(num_samples=self.length) for i in self.channels])
+        wf.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
         self.waveform = wf
         #print(wf)
         return None
@@ -45,20 +55,31 @@ class PXIeSignalAcq(object):
                 self.dataframe.loc[i*len(self.channels) + j]["Record"] = i
                 self.dataframe.loc[i*len(self.channels) + j]["Channel"] = j
                 self.dataframe.loc[i*len(self.channels) + j]["Samples"] = list(self.waveform[j][i].samples)
-        print(self.dataframe.loc[0]["Samples"])
+        # print(self.dataframe.loc[0]["Samples"])
         return None
 
+    def save_dataframe(self, name = "data1.json"):
+        self.dataframe.to_json(name)
+        return None
+
+    def read_dataframe(self, name = "data1.json"):
+        prova = pd.read_json(name)
+        print(prova)
     # Set records (sampling frequency, rate, length, width,...)
     # Set triggers (edge, immediate, digital, negative, positive,...)
     # Set channels (addressing each channel)
-    
-    def close(self):
-        return self.session.close()
+    def __enter__(self):
+        return self
+    def __exit__(self, *exc):
+        self.session.close()
 
-test = PXIeSignalAcq("PXI1Slot2")
-test.read()
-test.create_dataframe()
-test.fill_dataframe()
+with PXIeSignalAcq("PXI1Slot2") as test:
+    #test = PXIeSignalAcq("PXI1Slot2")
+    test.read()
+    test.create_dataframe()
+    test.fill_dataframe()
+    test.save_dataframe()
+    # test.read_dataframe()
 """
 def example(resource_name, channels, options, length, voltage):
     with niscope.Session(resource_name=resource_name, options=options) as session:
