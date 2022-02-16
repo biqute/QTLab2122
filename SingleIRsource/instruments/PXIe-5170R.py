@@ -4,16 +4,18 @@
 # niscope module examples: https://nimi-python.readthedocs.io/en/master/niscope/examples.html
 # https://manualzz.com/doc/6830056/ni-scope-software-user-manual
 
+from operator import index
 import niscope
 import argparse
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.signal import savgol_filter
 
 class PXIeSignalAcq(object):
 
-    def __init__(self, device_address, trigger=0, channels=[0], records=3, sample_rate=5e7, length=10):
+    def __init__(self, device_address, trigger=0, channels=[0], records=3, sample_rate=5e7, length=4000):
         try:
             self.session = niscope.Session(device_address)
             print('Connesso')
@@ -24,9 +26,10 @@ class PXIeSignalAcq(object):
         self.trigger = trigger
         self.channels = channels
         self.records = records
+        self.record_index = 0
 
         self.session.configure_vertical(range = 5, coupling=niscope.VerticalCoupling.DC)
-        self.session.configure_horizontal_timing(min_sample_rate=sample_rate, min_num_pts=length, ref_position=50.0, num_records=records, enforce_realtime=True)
+        self.session.configure_horizontal_timing(min_sample_rate=sample_rate, min_num_pts=length, ref_position=40.0, num_records=records, enforce_realtime=True)
 
         self.session.trigger_type = niscope.TriggerType.EDGE
         self.session.trigger_source = "0"
@@ -35,6 +38,24 @@ class PXIeSignalAcq(object):
         self.session.trigger_delay_time = 0.0
 
         self.session.initiate()
+
+    def derivative_trigger(self, n):
+        arr = self.waveform[0][self.record_index].samples
+        y = savgol_filter(arr, self.length, 70, n, delta=1)
+        filtred = np.where(y[250:len(y)-250] < -0.5e-5)[0]
+
+        if len(filtred) == 0 :
+            return -1
+
+        ref_point = filtred[0] + 250
+
+        start = ref_point - 300 
+        end = ref_point + 1600
+        
+        self.record_index += 1
+
+        return arr[start:end]
+
 
     def read(self):
         wf = [] 
@@ -64,7 +85,35 @@ class PXIeSignalAcq(object):
 
     def read_dataframe(self, name = "data1.json"):
         prova = pd.read_json(name)
-        print(prova)
+
+        for i in range(self.records):
+            sample = prova.loc[i]["Samples"]
+            x = np.linspace(0,len(sample)-1,len(sample))
+            y = savgol_filter(sample, self.length, 70, 2, delta=1)
+
+            filtred = np.where(y[250:len(y)-250] < -0.5e-5)[0]
+            # se filtred è nullo esce. no segnale. MEGA IF
+
+            ref_point = filtred[0] + 250
+            print(ref_point)
+
+            start = ref_point - 300 
+            end = ref_point + 1600
+            
+            final = sample[start:end]
+
+
+            
+
+            fig, ax1 = plt.subplots()
+            ax2 = ax1.twinx()
+           # ax1.scatter(x[start:end], sample[start:end], color='g', marker=".")
+            ax2.scatter(x[start:end], final, marker=".")
+            # plt.ylim(-10,10)
+            # plt.scatter(x, sample)
+            # plt.scatter(x, y)
+            fig.savefig("imm" + str(i) + ".png")
+        
     # Set records (sampling frequency, rate, length, width,...)
     # Set triggers (edge, immediate, digital, negative, positive,...)
     # Set channels (addressing each channel)
@@ -79,7 +128,9 @@ with PXIeSignalAcq("PXI1Slot2") as test:
     test.create_dataframe()
     test.fill_dataframe()
     test.save_dataframe()
-    # test.read_dataframe()
+    test.read_dataframe()
+
+
 """
 def example(resource_name, channels, options, length, voltage):
     with niscope.Session(resource_name=resource_name, options=options) as session:
