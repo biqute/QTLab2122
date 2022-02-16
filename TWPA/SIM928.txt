@@ -1,15 +1,3 @@
-#!/usr/bin/env python3  Line 1
-# -*- coding: utf-8 -*- Line 2
-#----------------------------------------------------------------------------
-# Created By  : Celotto Andrea, Palumbo Emanuele, Zafferani Alessandro   Line 3
-# Created Date: 16/02/2022 12:30
-# version ='Beta 1.0'
-
-import visa 
-import numpy as np
-import serial
-import time
-
 class SIM928(object):
     def __init__(self, visa_name, sim900port):
         self.rm = visa.ResourceManager()
