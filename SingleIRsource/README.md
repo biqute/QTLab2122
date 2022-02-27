@@ -28,5 +28,5 @@ pip install -r requirements.txt
 4. To exit the virtual environment use the deactivate command.
 
 ## Contributors
-- Aurora Perego [a.perego39@campus.unimib.it](mailto:a.perego39@campus.unimib.it)
-- Marco Gobbo   [m.gobbo4@campus.unimib.it](mailto:m.gobbo4@campus.unimib.it)
+- [Aurora Perego](https://github.com/AuroraPerego) (mail: [a.perego39@campus.unimib.it](mailto:a.perego39@campus.unimib.it))
+- [Marco Gobbo](https://github.com/marcogobbo)     (mail: [m.gobbo4@campus.unimib.it](mailto:m.gobbo4@campus.unimib.it))
