@@ -86,15 +86,14 @@ class PXIeSignalAcq(object):
 
     def read(self):
         self.waveform.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
-        print(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples)
+        #print(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
         return None
 
     def fill_matrix(self):
         for i in range(self.records):
             #if (self.derivative_trigger(2, i)):
-            self.i_matrix.append(self.waveform[0][i].samples)
-            self.q_matrix.append(self.waveform[1][i].samples)
-            #print(self.waveform[0][i].samples)
+            self.i_matrix.append(np.array(self.waveform[0][i].samples))
+            self.q_matrix.append(np.array(self.waveform[1][i].samples))
         return None
     
     def storage_hdf5(self, name):
@@ -104,11 +103,12 @@ class PXIeSignalAcq(object):
         return None
 
     def get_hdf5(self, name):
-        with h5py.File(name, 'w') as hdf:
-            print("Siegnale I")
-            print(np.array(hdf.get('i_signal')))
-            print("Siegnale Q")
-            print(np.array(hdf.get('q_signal')))
+        with h5py.File(name, 'r') as hdf:
+            for i in range(0,3):
+                print("Segnale I")
+                print(np.array(hdf['i_signal'])[i])
+                print("Segnale Q")
+                print(np.array(hdf['q_signal'])[i])
         return None
 
 """

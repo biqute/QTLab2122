@@ -16,17 +16,17 @@ with FSWSynt("COM12") as synt:
     print(synt.get_ID())
     ref = 5.87045 
     #for i in range(-1,2):
-    freq = ref + 1*0.0002
-    print(synt.set_freq(freq))
-    time.sleep(0.2)
-    print('ciao')
-    print(synt.get_freq())
+    #    freq = ref + i*0.0002
+    #    print(synt.set_freq(freq))
+    #    time.sleep(0.2)
+    #    print('ciao')
+    #    print(synt.get_freq())
+    #    daq.read()
+    #    print('quasi quasi fatto')
+    #    daq.fill_matrix()
+    #    print('quasi fatto')
+    #    daq.storage_hdf5('frequency.h5')
 
-    daq.read()
-    print('quasi quasi fatto')
-    daq.fill_matrix()
-    print('quasi fatto')
-    daq.storage_hdf5('frequency.h5')
     daq.get_hdf5('frequency.h5')
 
 daq.close()
