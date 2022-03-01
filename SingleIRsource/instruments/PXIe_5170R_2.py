@@ -7,6 +7,7 @@
 import niscope as ni
 import h5py 
 from scipy.signal import savgol_filter
+import numpy as np
 
 class PXIeSignalAcq(object):
     def __init__(self, device_address, trigger: dict, channels=[0,1], records=3, sample_rate=5e7, length=4000):
@@ -29,8 +30,8 @@ class PXIeSignalAcq(object):
         self.session.trigger_type       = getattr(ni.TriggerType, trigger["trigger_type"])
         self.session.trigger_source     = trigger["trigger_source"]
         self.session.trigger_slope      = getattr(ni.TriggerSlope, trigger["trigger_slope"])
-        self.session.trigger_level      = trigger["trigger_level"]
-        self.session.trigger_delay_time = trigger["trigger_delay"]
+        self.session.trigger_level      = float(trigger["trigger_level"])
+        self.session.trigger_delay_time = float(trigger["trigger_delay"])
 
         self.session.initiate()
 
@@ -40,19 +41,28 @@ class PXIeSignalAcq(object):
     def __exit__(self, *exc):
         self.session.close()
 
+    def close(self):
+        self.session.close()
+
     def derivative_trigger(self, index, n=2):
         # We can focus only one signal (channel 0 in this case) and then apply the corrections on both
         sample = self.waveform[0][index].samples
 
         first_derivative = np.diff(sample, n = 1)
         n_points, i = 0, 0
-        max = np.std(sample[0:500]) #al massimo si può fare due sigma, il 500 va valutato in base a lenght e a ref_position
+        std = np.std(sample[0:1000])/2 
+        max = sample.argmax()
+        tot = max
         
-        while(n_points<15): #si può aumentare n_points
-            n_points = n_points + 1 if first_derivative[i] > max else 0
+        while(sample[max])>std:
+            max -= 1
+        tot = tot - max
+
+        while(n_points<tot): #si può aumentare n_points
+            n_points = n_points + 1 if (sample[i] > std) else 0
             i += 1
 
-        start = i - 15
+        start = i - tot
         end = start + 100 #numero a caso, si intende la lunghezza di salita e una parte di discesa
 
         #problema: la derivata seconda fatta solo dove inizia l'impulso è inutile secondo me
@@ -76,13 +86,15 @@ class PXIeSignalAcq(object):
 
     def read(self):
         self.waveform.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
+        print(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples)
         return None
 
     def fill_matrix(self):
         for i in range(self.records):
-            if (self.derivative_trigger(2, i)):
-                self.i_matrix.append(self.waveform[0][i].samples)
-                self.q_matrix.append(self.waveform[1][i].samples)
+            #if (self.derivative_trigger(2, i)):
+            self.i_matrix.append(self.waveform[0][i].samples)
+            self.q_matrix.append(self.waveform[1][i].samples)
+            #print(self.waveform[0][i].samples)
         return None
     
     def storage_hdf5(self, name):
@@ -91,7 +103,15 @@ class PXIeSignalAcq(object):
             hdf.create_dataset('q_signal', data=self.q_matrix, compression='gzip', compression_opts=9)
         return None
 
+    def get_hdf5(self, name):
+        with h5py.File(name, 'w') as hdf:
+            print("Siegnale I")
+            print(np.array(hdf.get('i_signal')))
+            print("Siegnale Q")
+            print(np.array(hdf.get('q_signal')))
+        return None
 
+"""
 trigger = dict(
     trigger_type = 'EDGE', #or 'IMMEDIATE', 'DIGITAL'
     trigger_source = '0',
@@ -146,7 +166,7 @@ class PXIeSignalAcq(object):
             # plt.ylim(-10,10)
             plt.scatter(x, sample)
             plt.savefig("imm" + str(i) + ".png")
-        
+        """
 
 """
 def example(resource_name, channels, options, length, voltage):

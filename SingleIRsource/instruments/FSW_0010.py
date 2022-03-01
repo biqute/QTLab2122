@@ -1,5 +1,5 @@
 import serial
-#import time
+import time
 
 class FSWSynt(object):
 
@@ -30,9 +30,12 @@ class FSWSynt(object):
         cmd_string = 'FREQ ' + str(freq) + 'GHz\r'
         self.write(str.encode(cmd_string))
         return "Frequency set to "+str(freq)+" GHz."
-
-    def close(self):
-        return self.close()
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, *exc):
+        return None
 
     def connect(self):
         return self.connect()
@@ -46,3 +49,15 @@ class FSWSynt(object):
     
     def get_temp(self):      #Temperature in Celsius degrees
         return self.ask(b'DIAG:MEAS? 21\r')
+"""
+with FSWSynt("COM12") as test:
+    # Trovare comando ON snza aprire il programma
+    #test.connect()
+    #time.sleep(1)
+    #print(test.get_ID())
+    #for i in range(-10,10):
+    i=0
+    print(test.set_freq(5.87045+i*0.0002))
+    time.sleep(0.2)
+    print(test.get_freq(), i)
+    time.sleep(3)"""
