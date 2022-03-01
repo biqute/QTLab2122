@@ -15,18 +15,17 @@ daq =  PXIeSignalAcq("PXI1Slot2", trigger, records=1, sample_rate=5e7, length=10
 with FSWSynt("COM12") as synt:
     print(synt.get_ID())
     ref = 5.87045 
-    #for i in range(-1,2):
-    #    freq = ref + i*0.0002
-    #    print(synt.set_freq(freq))
-    #    time.sleep(0.2)
-    #    print('ciao')
-    #    print(synt.get_freq())
-    #    daq.read()
+    for i in range(-100,100):
+        freq = ref + i*0.0002
+        print(synt.set_freq(freq))
+        time.sleep(0.2)
+        print(i)
+        daq.read()
     #    print('quasi quasi fatto')
-    #    daq.fill_matrix()
+        daq.fill_matrix()
     #    print('quasi fatto')
-    #    daq.storage_hdf5('frequency.h5')
+        daq.storage_hdf5('frequency.h5')
 
-    daq.get_hdf5('frequency.h5')
+    #daq.get_hdf5('frequency.h5')
 
 daq.close()
