@@ -40,26 +40,31 @@ class PXIeSignalAcq(object):
     def __exit__(self, *exc):
         self.session.close()
 
-    def derivative_trigger(self, index, n, limit):
-        # We can focus only one signal (I in this case) and then apply the corrections on both
+    def derivative_trigger(self, index, n=2):
+        # We can focus only one signal (channel 0 in this case) and then apply the corrections on both
         sample = self.waveform[0][index].samples
 
         first_derivative = np.diff(sample, n = 1)
-        n_points = 0
-        i = 0
+        n_points, i = 0, 0
         max = np.std(sample[0:500]) #al massimo si può fare due sigma, il 500 va valutato in base a lenght e a ref_position
+        
         while(n_points<15): #si può aumentare n_points
             n_points = n_points + 1 if first_derivative[i] > max else 0
             i += 1
-        start = i - 15
 
-        begin = start - 25
-        end = start + 25    
+        start = i - 15
+        end = start + 100 #numero a caso, si intende la lunghezza di salita e una parte di discesa
+
+        #problema: la derivata seconda fatta solo dove inizia l'impulso è inutile secondo me
+        #si può, una volta trovato l'inizio, fare la derivata solo per salita e una parte di discesa
+        #a questo punto ha senso parlare del massimo della derivata seconda sopra un certo limite
+        #in realtà minimo perchè la derivata seconda è negativa dove interessa a noi
 
         derivative_func = savgol_filter(sample[begin:end], len(sample[begin:end])-1, 12, n, delta=1)
 
-        #limit NON va passato, lo decidiamo qui 
-        if (derivative_func.max() > limit):
+        #limite di -0.5 da valutare..
+        under_threshold = np.count_nonzero(derivative_func < -0.5)
+        if (under_threshold > 50): #altro numero a caso, da capire
             # We need to understand and automatize the centering of impulse and resizing the window length
             begin = start - 200 #quanti punti prima dell'inizio?
             end = start + 2000 #quanto è lungo l'impulso?
