@@ -87,10 +87,13 @@ class PXIeSignalAcq(object):
     def read(self):
         self.waveform.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
         #print(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
+        self.i_matrix.append(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
+        self.q_matrix.append(np.array(self.session.channels[1].read(num_samples=self.length, timeout=0)[0].samples))
         return None
 
-    def fill_matrix(self):
-        for i in range(self.records):
+    def fill_matrix(self, iter = 0):
+        iter = self.records if iter == 0 else iter
+        for i in range(iter):
             #if (self.derivative_trigger(2, i)):
             self.i_matrix.append(np.array(self.waveform[0][i].samples))
             self.q_matrix.append(np.array(self.waveform[1][i].samples))
@@ -113,10 +116,10 @@ class PXIeSignalAcq(object):
 
 """
 trigger = dict(
-    trigger_type = 'EDGE', #or 'IMMEDIATE', 'DIGITAL'
+    trigger_type = 'IMMEDIATE', # 'EDGE' or 'IMMEDIATE', 'DIGITAL'
     trigger_source = '0',
     trigger_slope = 'POSITIVE', # or 'NEGATIVE'
-    trigger_level = '0.5',
+    trigger_level = '0.0',
     trigger_delay = '0.0'
 )
 with PXIeSignalAcq("PXI1Slot2", trigger) as test:
@@ -124,6 +127,7 @@ with PXIeSignalAcq("PXI1Slot2", trigger) as test:
     test.read()
     test.fill_matrix()
     test.storage_hdf5('signals.h5')
+    test.get_hdf5('signals.h5')
 
 
 
