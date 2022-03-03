@@ -91,6 +91,9 @@ class PXIeSignalAcq(object):
         self.q_matrix.append(np.array(self.session.channels[1].read(num_samples=self.length, timeout=0)[0].samples))
         return None
 
+    def acq(self):
+        return np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples)
+
     def fill_matrix(self, iter = 0):
         iter = self.records if iter == 0 else iter
         for i in range(iter):

@@ -13,7 +13,7 @@ trigger = dict(
 daq =  PXIeSignalAcq("PXI1Slot2", trigger, records=1, channels=[0,1], sample_rate=5e7, length=1000)
 with FSWSynt("COM12") as synt:
     print(synt.get_ID())
-    ref = 5.87045 
+    ref = 5.8686
     #ref = 5.7
     for i in range(-2500,2500):
         freq = ref + i*0.0002
@@ -23,7 +23,7 @@ with FSWSynt("COM12") as synt:
         print(i)
         daq.read()
     #daq.fill_matrix(200)
-    daq.storage_hdf5('scan_25dB_1GhZ.h5')
+    daq.storage_hdf5('scan_2_1GhZ.h5')
 
     #daq.get_hdf5('frequency.h5')
 
