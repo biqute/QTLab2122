@@ -16,5 +16,11 @@ pip install -r requirements.txt
 
 ## Directories and Files description
 * **notebooks:** some example of how to use scripts and classes
-* **handlers:** contains classes to communicate with Oxford ITC503 and HP VNA
-* **tutto_ok?.py:** a script to check if cryostate is behaving as expected, otherwise sends an e-mail alert
+<br/><br/>
+* **requirements.txt:** list of all required packages
+* **README.MD:** this file!
+<br/><br/>
+* **instruments.py:** contains classes to communicate with Oxford ITC503 and HP VNA
+* **resonance.py:** containes clases to analyze resonances, fit them and find the energy gap
+* **tutto_ok.py:** a script to check if cryostate is behaving as expected, otherwise sends an e-mail alert
+* **get_data.py:** a script to get acquire resonance spectra at different temps
