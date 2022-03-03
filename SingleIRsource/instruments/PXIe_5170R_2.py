@@ -85,10 +85,10 @@ class PXIeSignalAcq(object):
             return False
 
     def read(self):
-        self.waveform.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
+        #self.waveform.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
         #print(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
-        self.i_matrix.append(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
-        self.q_matrix.append(np.array(self.session.channels[1].read(num_samples=self.length, timeout=0)[0].samples))
+        self.i_matrix.append(np.array(self.session.channels[2].read(num_samples=self.length, timeout=0)[0].samples))
+        self.q_matrix.append(np.array(self.session.channels[3].read(num_samples=self.length, timeout=0)[0].samples))
         return None
 
     def acq(self):

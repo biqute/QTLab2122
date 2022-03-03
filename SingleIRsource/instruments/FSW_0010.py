@@ -57,7 +57,7 @@ class FSWSynt(object):
     #print(test.get_ID())
     #for i in range(-10,10):
     i=0
-    print(test.set_freq(5.8686+i*0.0002))
+    print(test.set_freq(5.86905+i*0.0002))
     time.sleep(0.2)
     print(test.get_freq(), i)
     time.sleep(3)"""
