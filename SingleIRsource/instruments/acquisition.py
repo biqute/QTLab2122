@@ -11,6 +11,9 @@ trigger = dict(
     trigger_delay = '0.0'
 )
 
+#con rate diverso da 5e7 e length diversa da 1000 non scatta il trigger..
+#bisogna decidere quanti punti vogliamo in base alla lunghezza del segnale e al sample_rate
+
 daq =  PXIeSignalAcq("PXI1Slot2", trigger, records=1, channels=[0], sample_rate=5e6, length=1000)
 with FSWSynt("COM12") as synt:
     print(synt.get_ID())
