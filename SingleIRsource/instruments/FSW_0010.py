@@ -4,7 +4,11 @@ import time
 class FSWSynt(object):
 
     def __init__(self, device_address):
-        self.device = serial.Serial(device_address, baudrate=115200, timeout=1.5, stopbits=1, parity='N')       #stopbits
+        try:
+            self.device = serial.Serial(device_address, baudrate=115200, timeout=1.5, stopbits=1, parity='N')       #stopbits
+            print('Connected to FSWSynt :)')
+        except:
+            print('Not connected to FSWSynt :(')
 
     def write(self, msg):
         self.device.write(bytes(msg))
@@ -37,6 +41,12 @@ class FSWSynt(object):
     def __exit__(self, *exc):
         return None
 
+    def turn_on(self):
+        return self.ask(b'OUTP:STAT ON\r') 
+
+    def turn_off(self):
+        return self.ask(b'OUTP:STAT OFF\r') 
+
     def connect(self):
         return self.connect()
 
@@ -49,15 +59,3 @@ class FSWSynt(object):
     
     def get_temp(self):      #Temperature in Celsius degrees
         return self.ask(b'DIAG:MEAS? 21\r')
-
-"""with FSWSynt("COM12") as test:
-    # Trovare comando ON snza aprire il programma
-    #test.connect()
-    #time.sleep(1)
-    #print(test.get_ID())
-    #for i in range(-10,10):
-    i=0
-    print(test.set_freq(5.86905+i*0.0002))
-    time.sleep(0.2)
-    print(test.get_freq(), i)
-    time.sleep(3)"""
