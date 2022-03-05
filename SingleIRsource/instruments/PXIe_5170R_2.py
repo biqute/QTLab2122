@@ -13,9 +13,9 @@ class PXIeSignalAcq(object):
     def __init__(self, device_address, trigger: dict, channels=[0,1], records=3, sample_rate=5e7, length=4000):
         try:
             self.session = ni.Session(device_address)
-            print('Connected')
+            print('Connected to PXIe :)')
         except:
-            print('Not connected')
+            print('Not connected to PXIe :(')
 
         self.waveform, self.i_matrix, self.q_matrix = [], [], []
 
@@ -50,20 +50,21 @@ class PXIeSignalAcq(object):
 
         first_derivative = np.diff(sample, n = 1)
         n_points, i = 0, 0
-        std = np.std(sample[0:1000])/2 
-        max = sample.argmax()
+        std = np.std(first_derivative[0:1000])/2 
+        max = first_derivative.argmax()
         tot = max
         
-        while(sample[max])>std:
+        while(first_derivative[max])>std:
             max -= 1
         tot = tot - max
 
         while(n_points<tot): #si può aumentare n_points
-            n_points = n_points + 1 if (sample[i] > std) else 0
+            n_points = n_points + 1 if (first_derivative[i] > std) else 0
             i += 1
 
         start = i - tot
-        end = start + 100 #numero a caso, si intende la lunghezza di salita e una parte di discesa
+        end = start + 100 #numero a caso, si intende la lunghezza di salita e una parte di discesa per es tot o 2*tot
+        begin = start - 20
 
         #problema: la derivata seconda fatta solo dove inizia l'impulso è inutile secondo me
         #si può, una volta trovato l'inizio, fare la derivata solo per salita e una parte di discesa
@@ -85,21 +86,27 @@ class PXIeSignalAcq(object):
             return False
 
     def read(self):
-        #self.waveform.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
+        self.waveform.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
         #print(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
-        self.i_matrix.append(np.array(self.session.channels[2].read(num_samples=self.length, timeout=0)[0].samples))
-        self.q_matrix.append(np.array(self.session.channels[3].read(num_samples=self.length, timeout=0)[0].samples))
+        #self.i_matrix.append(np.array(self.session.channels[2].read(num_samples=self.length, timeout=0)[0].samples))
+        #self.q_matrix.append(np.array(self.session.channels[3].read(num_samples=self.length, timeout=0)[0].samples))
+        return None
+
+    def fetch(self):
+        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=0) for i in self.channels])
         return None
 
     def acq(self):
-        return np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples)
+        self.i_matrix.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=0)[0].samples))
+        self.q_matrix.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=0)[0].samples))
+        return None
 
     def fill_matrix(self, iter = 0):
         iter = self.records if iter == 0 else iter
         for i in range(iter):
             #if (self.derivative_trigger(2, i)):
             self.i_matrix.append(np.array(self.waveform[0][i].samples))
-            self.q_matrix.append(np.array(self.waveform[1][i].samples))
+            self.q_matrix.append(np.array(self.waveform[1][i].samples)) #mettere tutti e 4 i canali con un try except
         return None
     
     def storage_hdf5(self, name):
@@ -110,7 +117,7 @@ class PXIeSignalAcq(object):
 
     def get_hdf5(self, name):
         with h5py.File(name, 'r') as hdf:
-            for i in range(0,3):
+            for i in range(0,self.records):
                 print("Segnale I")
                 print(np.array(hdf['i_signal'])[i])
                 print("Segnale Q")
