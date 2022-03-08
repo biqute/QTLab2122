@@ -13,14 +13,11 @@ or
 virtualenv daqenv
 ```
 2. Now you can "activate" the environment by running the activation script.
-If you are on Windows use
-```
-daqenv\Scripts\activate.bat
-```
-otherwise on Linux and macOS use
 ```
 source daqenv/bin/activate
 ```
+(or **activate.bat**, **activate.ps1** depending on the operating system used)
+
 3. Now you can install all the packages needed with the following line:
 ```
 pip install -r requirements.txt
@@ -30,3 +27,17 @@ pip install -r requirements.txt
 ## Contributors
 - [Aurora Perego](https://github.com/AuroraPerego) (mail: [a.perego39@campus.unimib.it](mailto:a.perego39@campus.unimib.it))
 - [Marco Gobbo](https://github.com/marcogobbo)     (mail: [m.gobbo4@campus.unimib.it](mailto:m.gobbo4@campus.unimib.it))
+
+## Project folders
+    
+    SingleIRsource
+    │  
+    ├── daqenv             # Virtual environment
+    ├── data_analysis      # Code to analyse data and analysis results (no data yet)
+    ├── h5_files           # Data acquired will be saved here
+    ├── plot               # Plots 
+    ├── programs           # Programs to communicate with the instruments and for the data acquisition
+    |    └── instruments   # Classes of the synthetizer and of the acquisition card + useful functions 
+    ├── simulated          # Analysis on simulated waveform to test some components of the code 
+    ├── requirements.txt   # Libraries needed to run the code
+    └── README.md          # README file

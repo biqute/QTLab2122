@@ -64,7 +64,7 @@ def plot_hdf5(name, i = 0, begin=-1, end=-1, save = False):
         fig.tight_layout()
         fig.patch.set_facecolor('white')
         if save:
-            fig.savefig('plot/' + str(name) + '.png', dpi=300)                
+            fig.savefig('../plot/' + str(name) + '.png', dpi=300)                
     return None
 
 #given two arrays it returns the point where they both vary as much as possible
@@ -112,7 +112,7 @@ def big_plot_from_array(I, Q, ref, step, begin = -1, end = -1, name = 'test', sa
     fig.tight_layout()
     if save:
         fig.patch.set_facecolor('white')
-        fig.savefig('plot/' + name + '.png', dpi=300)
+        fig.savefig('../plot/' + name + '.png', dpi=300)
     return None
 
 #plot of I, Q, IQ, module from the hdf5 file
@@ -146,5 +146,5 @@ def big_plot_from_file(file, ref, step, record = 0, begin = -1, end = -1, save =
     fig.tight_layout()
     if save:
         fig.patch.set_facecolor('white')
-        fig.savefig('plot/' + file + '.png', dpi=300)
+        fig.savefig('../plot/' + file + '.png', dpi=300)
     return None
