@@ -1,12 +1,18 @@
+from curses import window
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
+from scipy.ndimage import convolve
 from random import randint, uniform
 
-def gen_signal(x=np.linspace(0,1000,1000), baseline=0, amplitude=140, rise_time=40, decay_time=60, pulse_start=200, noise_lev=0.5):
+def gen_signal(x=np.linspace(0,1000,1000), baseline=0, amplitude=140, rise_time=40, decay_time=60, pulse_start=200, noise_lev=0.5, plot=False):
     signal = baseline+1*amplitude*(np.exp(-x/rise_time)-np.exp((-x/decay_time)))
     signal = np.interp(x, x+pulse_start, signal)
     noise = np.random.normal(scale=noise_lev, size=len(signal))
+
+    if plot:
+        plt.plot(x, signal+noise)
+        plt.show()
 
     return signal+noise
 
@@ -169,6 +175,24 @@ def efficiency(index, x=np.linspace(0,1000,1000), pulse_start=200):
 
     return d/d_max
 
+# Si tratta solo di un calcolo su matrici anziché su vettori, il ragionamento è lo stesso precedente
+# ma pensato in ottimizzazione delle risorse
+def efficiency_matrix(indexes, x=np.linspace(0,1000,1000), pulse_start=200):
+    normalized_distances = []
+
+    for index in indexes:
+        d_max = 0
+        d = pulse_start - index
+
+        if d > 0:
+            d_max = pulse_start
+        else:
+            d = -d
+            d_max = len(x) - pulse_start
+        normalized_distances.append(d/d_max)
+
+    return normalized_distances
+
 def get_efficiency(eff, n_sample):
     return 1 - sum(eff)/n_sample
 
@@ -176,14 +200,35 @@ def vertex_parabola(x2, y1, y2, y3):
     x1 = x2 - 1
     x3 = x2 + 1
     b = x3*x3*(y2-y1) + x2*x2*(y3-y1) + x1*x1*(y3-y2)
-    a = (y2-y3)*x1 + (y3-y1)*x2 + (y1-y2)*x3
+    a = (y2-y3)*x1 + (y1-y3)*x2 + (y1-y2)*x3
     den = (x1-x2)*(x1-x3)*(x3-x2)
     return -b/(2*a)
 
-def derivative_trigger_matrix(sample, n=2, plot=False): #now sample is a matrix of all of the samples
-    moving_averages = sample #funzione di Matteo per calcolo mv_avg su una matrice
-    index_min = []
+# Moving average basato sul cumsum
+def moving_average(matrix, window_ma) :
+    ret = np.cumsum(matrix, axis=1, dtype=float)
+    ret[:, window_ma:] = ret[:, window_ma:] - ret[:, :-window_ma]
+    return ret[:, window_ma - 1:]
+
+def derivative_trigger_matrix(sample, window_ma, n=2, mv='convolve', plot=False): #now sample is a matrix of all of the samples
+    
+    if mv == 'convolve':
+        weights = np.full((1, window_ma), 1/window_ma)
+        moving_averages = convolve(sample, weights, mode='mirror')
+
+    if mv == 'cumsum':
+        moving_averages = moving_average(sample, window_ma)
+
+    index_mins = []
     for ii in range(len(sample)):
+        time = np.linspace(0,len(sample[ii]), len(sample[ii]))
+
+        # Plot dei grafici dopo aver generato la moving average sia che sia cumsum che convolve
+        if plot:
+            plt.plot(time, moving_averages[ii])
+            print('Sample: ', ii)
+            plt.show()
+
         first_derivative = np.gradient(moving_averages[ii])
         std = np.std(first_derivative[0:100])/2 #100 will become a function of length and pos_ref in pxie
         index_min = first_derivative.argmin()
@@ -218,16 +263,26 @@ def derivative_trigger_matrix(sample, n=2, plot=False): #now sample is a matrix 
         
         derivative_func = savgol_filter(sample[ii][begin:end], window_length, 8, n, delta=1) #8 is the best in the tests done
 
+        '''if plot:
+            plt.scatter(time[begin+b:end-b], derivative_func[b:-b], color="g")
+            plt.xlabel('Time [$\mu$s]')
+            plt.ylabel('Voltage [mV]')
+            plt.grid()
+            plt.show()'''
         x2 = begin+b+(derivative_func[b:-b].argmin())
         y1 = derivative_func[b+derivative_func[b:-b].argmin() - 1]
         y2 = derivative_func[b+derivative_func[b:-b].argmin()]
         y3 = derivative_func[b+derivative_func[b:-b].argmin() + 1]
-        min = vertex_parabola(x2, y1, y2, y3)
+        # min = vertex_parabola(x2, y1, y2, y3)
+        min = begin+b+(derivative_func[b:-b].argmin())
         # we have to drop the first b points and the last b points of the array
         # since sth strange happens here with the derivative due to the polinomial fitting of sav_gol
-        index_min.append(min)
+        
+        # Ho commentato il minimo precedente della parabola che non torna, dai tu un'occhiata,
+        # al momento lavoro con il vecchio così da avere un riferimento se tutto funziona sull'efficienza
+        index_mins.append(min)
 
-    return index_min
+    return index_mins
 
 def good_plot(x, y, title = 'title', x_label = 'x', y_label = 'y'):
     fig = plt.figure(dpi = 300)
@@ -236,4 +291,5 @@ def good_plot(x, y, title = 'title', x_label = 'x', y_label = 'y'):
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
+    plt.grid()
     plt.show()
