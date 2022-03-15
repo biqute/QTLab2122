@@ -1,4 +1,3 @@
-from curses import window
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
@@ -158,11 +157,11 @@ def derivative_trigger_matrix(sample, window_ma, poly=3, n=2, mv='convolve', ver
     for ii in range(len(sample)):
         time = np.linspace(0,len(sample[ii]), len(sample[ii]))
 
-        # Plot after moving average 
+        """      # Plot after moving average 
         if plot:
             plt.plot(time, moving_averages[ii])
             print('Sample: ', ii)
-            plt.show()
+            plt.show()"""
 
         first_derivative = np.gradient(moving_averages[ii])
         std = np.std(first_derivative[0:100])/2 #100 will become a function of length and pos_ref in pxie
@@ -198,12 +197,13 @@ def derivative_trigger_matrix(sample, window_ma, poly=3, n=2, mv='convolve', ver
         
         derivative_func = savgol_filter(sample[ii][begin:end], window_length, poly, n, delta=1) #8 is the best in the tests done
 
-        '''if plot:
+        if plot:
             plt.scatter(time[begin+b:end-b], derivative_func[b:-b], color="g")
+            #plt.scatter(time[begin:end], sample[ii][begin:end], color="b")
             plt.xlabel('Time [$\mu$s]')
             plt.ylabel('Voltage [mV]')
             plt.grid()
-            plt.show()'''
+            plt.show()
 
         x2 = begin+b+(derivative_func[b:-b].argmin())
         if vertex:
@@ -211,6 +211,14 @@ def derivative_trigger_matrix(sample, window_ma, poly=3, n=2, mv='convolve', ver
             y2 = derivative_func[b+derivative_func[b:-b].argmin()]
             y3 = derivative_func[b+derivative_func[b:-b].argmin() + 1]
             min = vertex_parabola(x2, y1, y2, y3)
+            aa, bb, cc = coeff_parabola(x2, y1, y2, y3)
+            if plot:
+                t = time[begin:end]
+                plt.scatter(t, aa*t*t + bb*t +cc, color='dodgerblue')
+                plt.xlabel('Time [$\mu$s]')
+                plt.ylabel('Voltage [mV]')
+                plt.grid()
+                plt.show()
         else:
             min = x2
         #min = begin+b+(derivative_func[b:-b].argmin())
@@ -220,18 +228,109 @@ def derivative_trigger_matrix(sample, window_ma, poly=3, n=2, mv='convolve', ver
 
     return index_mins
 
-def good_plot(x, y, title = 'title', x_label = 'x', y_label = 'y', good = False):
+
+def derivative_trigger_matrix2(sample, window_ma, wl=13, poly=3, n=2, mv='convolve', vertex = False, plot=False): #now sample is a matrix of all of the samples
+    
+    if mv == 'convolve':
+        weights = np.full((1, window_ma), 1/window_ma)
+        moving_averages = convolve(sample, weights, mode='mirror')
+
+    if mv == 'cumsum':
+        moving_averages = moving_average(sample, window_ma)
+
+    if mv == 'None':
+        moving_averages = sample
+
+    index_mins = []
+    for ii in range(len(sample)):
+        time = np.linspace(0,len(sample[ii]), len(sample[ii]))
+
+        """      # Plot after moving average 
+        if plot:
+            plt.plot(time, moving_averages[ii])
+            print('Sample: ', ii)
+            plt.show()"""
+
+        first_derivative = np.gradient(moving_averages[ii])
+        std = np.std(first_derivative[0:100])/2 #100 will become a function of length and pos_ref in pxie
+        index_min = first_derivative.argmin()
+
+        #print('index_min = ', index_min)
+        
+        rise_points = 0
+        while first_derivative[index_min - rise_points] < -std:
+            rise_points += 1
+        
+        #print('rise_points = ', rise_points)
+
+        a = 10
+        b = 2
+        start = index_min - rise_points
+
+        if start < a:
+            start = a
+        if start > len(sample[ii])-2*a:
+            start = len(sample[ii])-2*a
+        
+        end = start + 2*a      # +1 to avoid the error: "window_length must be odd."
+        begin = start - a if start - a > 0 else 0 # To avoid negative values for begin
+        
+        #print('hint start = %d, begin = %d, end = %d' %(start, begin, end))
+        
+        window_length = wl #-1 if len(sample[begin:end]) % 2 == 0 else len(sample[begin:end])
+
+        #print(window_length)
+
+        #poly_order = window_length-1 if window_length < 14 else 12
+        
+        derivative_func = savgol_filter(sample[ii], wl, poly, n, delta=1) #8 is the best in the tests done
+
+        if plot:
+            plt.scatter(time[begin:end], derivative_func[begin:end], color="g")
+            #plt.scatter(time[begin:end], sample[ii][begin:end], color="b")
+            plt.xlabel('Time [$\mu$s]')
+            plt.ylabel('Voltage [mV]')
+            plt.grid()
+            plt.show()
+
+        x2 = begin+1+(derivative_func[begin+1:end-1].argmin())
+        if vertex:
+            y1 = derivative_func[x2 - 1]
+            y2 = derivative_func[x2]
+            y3 = derivative_func[x2 + 1]
+            min = vertex_parabola(x2, y1, y2, y3)
+            aa, bb, cc = coeff_parabola(x2, y1, y2, y3)
+            if plot:
+                t = time[begin:end]
+                plt.scatter(t, aa*t*t + bb*t +cc, color='dodgerblue')
+                plt.xlabel('Time [$\mu$s]')
+                plt.ylabel('Voltage [mV]')
+                plt.grid()
+                plt.show()
+        else:
+            min = x2
+        #min = begin+b+(derivative_func[b:-b].argmin())
+        # we have to drop the first b points and the last b points of the array
+        # since sth strange happens here with the derivative due to the polinomial fitting of sav_gol
+        index_mins.append(min)
+
+    return index_mins
+
+
+def good_plot(x, y, title = 'title', x_label = 'x', y_label = 'y', good = True, save = False):
     if good:
-        fig = plt.figure(dpi = 300)
+        fig = plt.figure(dpi = 100)
         fig.patch.set_facecolor('white')       
-    plt.plot(x, y)
+    plt.scatter(x, y)
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.grid()
     plt.show()
+    if save:
+        fig.savefig(title+'.png', dpi = 300)
 
-def multiple_plots(x, *args, title = 'title', x_label = 'x', y_label = 'y', good = True):
+def multiple_plots(x, *args, title = 'title', x_label = 'x', y_label = 'y', good = True, save = False):
     if good:
         fig = plt.figure(dpi = 300)
         fig.patch.set_facecolor('white')     
@@ -243,3 +342,5 @@ def multiple_plots(x, *args, title = 'title', x_label = 'x', y_label = 'y', good
     plt.ylabel(y_label)
     plt.grid()
     plt.show()
+    if save:
+        fig.savefig(title+'.png', dpi = 300)
