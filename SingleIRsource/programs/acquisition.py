@@ -1,5 +1,5 @@
 from instruments.FSW_0010 import *
-from instruments.PXIe_5170R_2 import *
+from instruments.PXIe_5170R import *
 import time
 
 ########## parameters that can be changed
@@ -30,7 +30,7 @@ with FSWSynt("COM12") as synt:
     time.sleep(0.005) #IMPORTANT for real time communication
     print('The current frequency is: ' + synt.get_freq(freq))    #just to check if the freqency has been set correctly
 
-with PXIeSignalAcq("PXI1Slot2", trigger, records, channels, sample_rate, length) as daq:
+with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=channels, sample_rate=sample_rate, length=length) as daq:
     daq.read()
     daq.fill_matrix()
     daq.storage_hdf5(file_name + '.h5')

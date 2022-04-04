@@ -4,6 +4,7 @@ from scipy.signal import savgol_filter
 from scipy.ndimage import convolve
 from random import randint, uniform
 
+#to generate waveform with the shape of a double exponential, eventually adding noise to it
 def gen_signal(x=np.linspace(0,1000,1000), baseline=0, amplitude=140, rise_time=40, decay_time=60, pulse_start=200, noise_lev=0.5, plot=False):
     signal = baseline+1*amplitude*(np.exp(-x/rise_time)-np.exp((-x/decay_time)))
     signal = np.interp(x, x+pulse_start, signal)
@@ -15,9 +16,11 @@ def gen_signal(x=np.linspace(0,1000,1000), baseline=0, amplitude=140, rise_time=
 
     return signal+noise
 
+#to generate only noise
 def gen_noise(x=np.linspace(0,1000,1000), noise_lev=0.5):
     return np.random.normal(scale=noise_lev, size=len(x))
 
+#derivative trigger on a single wafeform DEPRECATED
 def derivative_trigger(sample, window_ma, a = 10, b = 5, n=2, plot=False):
     i = 0
     # Initialize an empty list to store moving averages
@@ -88,6 +91,7 @@ def derivative_trigger(sample, window_ma, a = 10, b = 5, n=2, plot=False):
     return min, x2#, derivative_func[b+derivative_func[b:-b].argmin()]
     #return print('start: ', time[begin+b+derivative_func[b:-b].argmin()])
 
+#efficiency on a single waveform DEPRECATED
 def efficiency(index, x=np.linspace(0,1000,1000), pulse_start=200):
     d_max = 0
     d = pulse_start - index
@@ -144,6 +148,7 @@ def moving_average(matrix, window_ma) :
     ret[:, window_ma:] = ret[:, window_ma:] - ret[:, :-window_ma]
     return ret[:, window_ma - 1:]
 
+#first version of the trigger
 def derivative_trigger_matrix(sample, window_ma, poly=3, n=2, mv='convolve', vertex = True, plot=False): #now sample is a matrix of all of the samples
     
     if mv == 'convolve':
@@ -228,7 +233,7 @@ def derivative_trigger_matrix(sample, window_ma, poly=3, n=2, mv='convolve', ver
 
     return index_mins
 
-
+#final version of the derivative trigger that acts on all the waveforms simultaneously, much faster then before
 def derivative_trigger_matrix2(sample, window_ma, wl=13, poly=3, n=2, mv='convolve', vertex = False, plot=False): #now sample is a matrix of all of the samples
     
     if mv == 'convolve':
@@ -299,9 +304,10 @@ def derivative_trigger_matrix2(sample, window_ma, wl=13, poly=3, n=2, mv='convol
             y2 = derivative_func[x2]
             y3 = derivative_func[x2 + 1]
             min = vertex_parabola(x2, y1, y2, y3)
-            aa, bb, cc = coeff_parabola(x2, y1, y2, y3)
+            
             if plot:
                 t = time[begin:end]
+                aa, bb, cc = coeff_parabola(x2, y1, y2, y3)
                 plt.scatter(t, aa*t*t + bb*t +cc, color='dodgerblue')
                 plt.xlabel('Time [$\mu$s]')
                 plt.ylabel('Voltage [mV]')
@@ -315,7 +321,6 @@ def derivative_trigger_matrix2(sample, window_ma, wl=13, poly=3, n=2, mv='convol
         index_mins.append(min)
 
     return index_mins
-
 
 def good_plot(x, y, title = 'title', x_label = 'x', y_label = 'y', good = True, save = False):
     if good:

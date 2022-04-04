@@ -1,5 +1,5 @@
 from instruments.FSW_0010 import *
-from instruments.PXIe_5170R_2 import *
+from instruments.PXIe_5170R import *
 import time
 
 ########## parameters that can be changed
@@ -17,7 +17,7 @@ trigger = dict(
 )
 ##########
 
-daq =  PXIeSignalAcq("PXI1Slot2", trigger, records=1, channels=[0,1], sample_rate=5e7, length=1000)
+daq =  PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=1, channels=[0,1], sample_rate=5e7, length=1000)
 with FSWSynt("COM12") as synt:
     print(synt.get_ID())
     
