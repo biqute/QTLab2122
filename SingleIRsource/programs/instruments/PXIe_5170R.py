@@ -7,6 +7,7 @@
 import niscope as ni
 import h5py 
 from scipy.signal import savgol_filter
+from scipy.ndimage import convolve
 import numpy as np
 
 class PXIeSignalAcq(object):
@@ -33,7 +34,7 @@ class PXIeSignalAcq(object):
         self.session.trigger_level      = float(trigger["trigger_level"])
         self.session.trigger_delay_time = float(trigger["trigger_delay"])
 
-        self.session.initiate()
+        self.session.initiate()  # If fetch() don't comment, otherwise comment it
 
     def __enter__(self):
         return self
@@ -44,56 +45,69 @@ class PXIeSignalAcq(object):
     def close(self):
         self.session.close()
 
-    def derivative_trigger(self, index, n=2):
-        # We can focus only one signal (channel 0 in this case) and then apply the corrections on both
-        sample = self.waveform[0][index].samples
+    def vertex_parabola(x2, y1, y2, y3):
+        x1 = x2 - 1
+        x3 = x2 + 1
+        b = x3 * x3 * (y2 - y1) + x2 * x2 * (y1 - y3) + x1 * x1 * (y3 - y2)
+        a = (y2 - y3) * x1 + (y3 - y1) * x2 + (y1 - y2) * x3
 
-        first_derivative = np.diff(sample, n = 1)
-        n_points, i = 0, 0
-        std = np.std(first_derivative[0:1000])/2 
-        max = first_derivative.argmax()
-        tot = max
-        
-        while(first_derivative[max])>std:
-            max -= 1
-        tot = tot - max
+        return -b/(2*a)
 
-        while(n_points<tot): #si può aumentare n_points
-            n_points = n_points + 1 if (first_derivative[i] > std) else 0
-            i += 1
+    def derivative_trigger_matrix(self, sample, window_ma=21, wl=13, poly=3, n=2, vertex=True):
+        weights = np.full((1, window_ma), 1/window_ma)
+        moving_averages = convolve(sample, weights, mode='mirror')
 
-        start = i - tot
-        end = start + 100 #numero a caso, si intende la lunghezza di salita e una parte di discesa per es tot o 2*tot
-        begin = start - 20
+        index_mins = []
 
-        #problema: la derivata seconda fatta solo dove inizia l'impulso è inutile secondo me
-        #si può, una volta trovato l'inizio, fare la derivata solo per salita e una parte di discesa
-        #a questo punto ha senso parlare del massimo della derivata seconda sopra un certo limite
-        #in realtà minimo perchè la derivata seconda è negativa dove interessa a noi
+        for i in range(len(sample)):
 
-        derivative_func = savgol_filter(sample[begin:end], len(sample[begin:end])-1, 12, n, delta=1)
+            first_derivative = np.gradient(moving_averages[i])
+            std = np.std(first_derivative[0:100])/2 #100 will become a function of length and pos_ref in pxie
+            index_min = first_derivative.argmin()
+            
+            rise_points = 0
 
-        #limite di -0.5 da valutare..
-        under_threshold = np.count_nonzero(derivative_func < -0.5)
-        if (under_threshold > 50): #altro numero a caso, da capire
-            # We need to understand and automatize the centering of impulse and resizing the window length
-            begin = start - 200 #quanti punti prima dell'inizio?
-            end = start + 2000 #quanto è lungo l'impulso?
-            self.waveform[0][index].samples = self.waveform[0][index].samples[begin:end]
-            self.waveform[1][index].samples = self.waveform[1][index].samples[begin:end]
-            return True
-        else:
-            return False
+            while first_derivative[index_min - rise_points] < -std:
+                rise_points += 1
+
+            a = 10
+            start = index_min - rise_points
+
+            if start < a:
+                start = a
+
+            if start > len(sample[i])-2*a:
+                start = len(sample[i])-2*a
+            
+            end = start + 2*a
+            begin = start - a
+            
+            derivative_func = savgol_filter(sample[i], wl, poly, n, delta=1, mode='mirror')
+
+            x2 = begin+1+(derivative_func[begin+1:end-1].argmin())
+
+            if vertex:
+                y1 = derivative_func[x2-1]
+                y2 = derivative_func[x2]
+                y3 = derivative_func[x2+1]
+                min = self.vertex_parabola(x2, y1, y2, y3)
+            else:
+                min = x2
+
+            index_mins.append(min)
+
+        return index_mins
+
 
     def read(self):
-        self.waveform.extend([self.session.channels[i].read(num_samples=self.length, timeout=0) for i in self.channels])
+        self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=0) for i in self.channels])
         #print(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
         #self.i_matrix.append(np.array(self.session.channels[2].read(num_samples=self.length, timeout=0)[0].samples))
         #self.q_matrix.append(np.array(self.session.channels[3].read(num_samples=self.length, timeout=0)[0].samples))
         return None
 
     def fetch(self):
-        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=0) for i in self.channels])
+        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=0, relative_to = ni.FetchRelativeTo.PRETRIGGER) for i in self.channels])
         return None
 
     def acq(self):
@@ -101,12 +115,23 @@ class PXIeSignalAcq(object):
         self.q_matrix.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=0)[0].samples))
         return None
 
-    def fill_matrix(self, iter = 0):
+    def fill_matrix(self, iter=0):
         iter = self.records if iter == 0 else iter
+        print('ITER = ',iter)
         for i in range(iter):
-            #if (self.derivative_trigger(2, i)):
+            #print(np.array(self.waveform[0][i].samples))
+            """difference = self.length - len(np.array(self.waveform[0][i].samples))
+            print(difference)
+            if difference != 0:
+                for i in range(difference):
+                    new = np.append(np.array(self.waveform[0][i].samples), 1)
+                    #print(new)
+                self.i_matrix.append(new)
+            else:"""
             self.i_matrix.append(np.array(self.waveform[0][i].samples))
-            self.q_matrix.append(np.array(self.waveform[1][i].samples)) #mettere tutti e 4 i canali con un try except
+            self.q_matrix.append(np.array(self.waveform[1][i].samples))
+            print(list(np.array(self.waveform[0][i].samples)))
+        #print(np.shape(self.q_matrix))
         return None
     
     def storage_hdf5(self, name):
@@ -123,6 +148,7 @@ class PXIeSignalAcq(object):
                 print("Segnale Q")
                 print(np.array(hdf['q_signal'])[i])
         return None
+
 
 """
 trigger = dict(
