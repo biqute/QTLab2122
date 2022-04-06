@@ -25,7 +25,7 @@ class PXIeSignalAcq(object):
         self.channels   = channels
         self.records    = records
 
-        self.session.configure_vertical(range=5, coupling=ni.VerticalCoupling.DC)
+        self.session.configure_vertical(range=1, coupling=ni.VerticalCoupling.DC)
         self.session.configure_horizontal_timing(min_sample_rate=sample_rate, min_num_pts=length, ref_position=40.0, num_records=records, enforce_realtime=True)
 
         self.session.trigger_type       = getattr(ni.TriggerType, trigger["trigger_type"])
@@ -118,10 +118,13 @@ class PXIeSignalAcq(object):
     def fill_matrix(self, iter=0):
         iter = self.records if iter == 0 else iter
         print('ITER = ',iter)
+        count = 0
         for i in range(iter):
             #print(np.array(self.waveform[0][i].samples))
-            """difference = self.length - len(np.array(self.waveform[0][i].samples))
-            print(difference)
+            difference = self.length - len(np.array(self.waveform[0][i].samples))
+            if difference == self.length:
+                count += 1
+            """print(difference)
             if difference != 0:
                 for i in range(difference):
                     new = np.append(np.array(self.waveform[0][i].samples), 1)
@@ -130,8 +133,13 @@ class PXIeSignalAcq(object):
             else:"""
             self.i_matrix.append(np.array(self.waveform[0][i].samples))
             self.q_matrix.append(np.array(self.waveform[1][i].samples))
-            print(list(np.array(self.waveform[0][i].samples)))
-        #print(np.shape(self.q_matrix))
+            #if difference !=0 and difference != self.length:
+            #    print(list(np.array(self.waveform[0][i].samples)))
+            print(len(np.array(self.waveform[0][i].samples)))
+            print(len(np.array(self.waveform[1][i].samples)))
+        #print(list(np.array(self.waveform[0][0].samples)))
+        print('record vuoti = ', count)
+            #print(np.shape(self.q_matrix))
         return None
     
     def storage_hdf5(self, name):

@@ -9,14 +9,14 @@ import time
 
 ########## Parameters that can be setted
 freq        = 5.86905              # frequency chosen to study I and Q (GHz)
-file_name   = 'TEST_100_1E7_1000'  # name of the file where data will be saved
-records     = 30                   # numer of records to store
+file_name   = 'TEST_100_1E7_10000' # name of the file where data will be saved
+records     = 1000                   # numer of records to store
 channels    = [0,1]                # list of enabled channels
 sample_rate = 1e7                  # rate of points sampling of PXIe-5170R
 length      = 1000                 # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
 
 trigger = dict(
-    trigger_type   = 'EDGE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
+    trigger_type   = 'IMMEDIATE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
     trigger_source = '0',
     trigger_slope  = 'POSITIVE', #'POSITIVE' or 'NEGATIVE'
     trigger_level  = '0.1',
@@ -37,4 +37,4 @@ trigger = dict(
 with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=channels, sample_rate=sample_rate, length=length) as daq:
     daq.fetch()
     daq.fill_matrix()
-    daq.storage_hdf5(file_name + '.h5')
+    #daq.storage_hdf5(file_name + '.h5')
