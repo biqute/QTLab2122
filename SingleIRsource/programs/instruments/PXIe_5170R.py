@@ -107,7 +107,7 @@ class PXIeSignalAcq(object):
         return None
 
     def fetch(self):
-        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=0, relative_to = ni.FetchRelativeTo.PRETRIGGER) for i in self.channels])
+        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=10, relative_to = ni.FetchRelativeTo.PRETRIGGER) for i in self.channels])
         return None
 
     def acq(self):

@@ -6,17 +6,19 @@ import time
 # Before acquiring, we must evaluate the dependence between: sample_rate, length (record) and pulse frequency
 # Usually sample_rate/length = 1e3
 # Record length is sometimes smaller than set length. (Problem 1)
+# We have solved the fact that the record length was sometimes less than the set length, we need to set the timeout on the fetch() function
+# This solution works well (and always) for the IMMEDIATE, we need to understand the EDGE, maybe we can set a long timeout
 
 ########## Parameters that can be setted
-freq        = 5.86905              # frequency chosen to study I and Q (GHz)
-file_name   = 'TEST_100_1E7_10000' # name of the file where data will be saved
+freq        = 5.86905                # frequency chosen to study I and Q (GHz)
+file_name   = 'TEST_100_1E7_10000'   # name of the file where data will be saved
 records     = 1000                   # numer of records to store
-channels    = [0,1]                # list of enabled channels
-sample_rate = 1e7                  # rate of points sampling of PXIe-5170R
-length      = 1000                 # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
+channels    = [0,1]                  # list of enabled channels
+sample_rate = 1e5                    # rate of points sampling of PXIe-5170R
+length      = 10000                   # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
 
 trigger = dict(
-    trigger_type   = 'IMMEDIATE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
+    trigger_type   = 'EDGE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
     trigger_source = '0',
     trigger_slope  = 'POSITIVE', #'POSITIVE' or 'NEGATIVE'
     trigger_level  = '0.1',
