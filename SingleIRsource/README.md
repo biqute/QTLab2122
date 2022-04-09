@@ -34,10 +34,30 @@ pip install -r requirements.txt
     │  
     ├── daqenv             # Virtual environment
     ├── data_analysis      # Code to analyse data and analysis results (no data yet)
-    ├── h5_files           # Data acquired will be saved here
+    ├── data               # Data acquired will be saved here
     ├── plot               # Plots 
     ├── programs           # Programs to communicate with the instruments and for the data acquisition
     |    └── instruments   # Classes of the synthetizer and of the acquisition card + useful functions 
-    ├── simulated          # Analysis on simulated waveform to test some components of the code 
+    ├── simulation         # Analysis on simulated waveform to test some components of the code 
     ├── requirements.txt   # Libraries needed to run the code
     └── README.md          # README file
+
+
+## Content of the folders
+
+  * ```acquisition.py```: acquire data using PXIe and a trigger and apply Savitzky–Golay filter
+  * ```analysis.ipynb```: analyze I, Q data to find the best frequency for the acquisition
+  * ```continuos_acquisition.py```: acquire data continuously using PXIe 
+  * ```IQ_correction.py```: to calibrate the non linear response of IQ mixer and characterize it
+  * ```scan_freq.py```: perform a scan over a range of frequencies to find the resonances
+  * ```synt_control.py```: to set a frequency for the synthetizer or iterate over different frequencies
+  * ```threshold.py```: iterate over different thresholds to select the best one for our signals
+
+  * ```FSW_0010.py```: control the synthetizer QuickSynt FSW-0010 
+  * ```PXIe_5170R.py```: control the high speed digitizer PXIe-5170R
+  * ```utils.py```: generic utility functions
+
+  ## TO DO
+  * ```IQ_processing.py```: correct I, Q and join them
+
+ 

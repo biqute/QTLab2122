@@ -1,0 +1,39 @@
+records     = 30                   # numer of records to store
+channels    = [0,1]                # list of enabled channels
+
+
+sample_rate = 5e6                  # rate of points sampling of PXIe-5170R
+length      = 1000 
+empty record= 15
+
+sample_rate = 1e6                  # rate of points sampling of PXIe-5170R
+length      = 1000 
+empty record= 28, one with len=732 instead of 1000 and then all the record are empty, even those of channel 1 that usually are correct
+
+sample_rate = 1e6                  # rate of points sampling of PXIe-5170R
+length      = 100 
+empty record= 14 (channel 1 all record w/ full length)
+
+sample_rate = 1e7                  # rate of points sampling of PXIe-5170R
+length      = 1000                  
+tutti pieni
+
+sample_rate = 8e6                  # rate of points sampling of PXIe-5170R
+length      = 1000      
+empty record= 6, poi 5
+
+sample_rate = 8e6                  # rate of points sampling of PXIe-5170R
+length      = 100      
+empty record= 0
+
+records     = 1000                   # numer of records to store
+channels    = [0,1]                # list of enabled channels
+sample_rate = 8e6                  # rate of points sampling of PXIe-5170R
+length      = 100
+empty record= 460
+
+records     = 1000                   # numer of records to store
+channels    = [0,1]                # list of enabled channels
+sample_rate = 1e7                  # rate of points sampling of PXIe-5170R
+length      = 1000 
+empty record= 471, 494, 484

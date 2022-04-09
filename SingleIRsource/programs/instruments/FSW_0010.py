@@ -1,3 +1,7 @@
+# REFERENCES
+# https://pyserial.readthedocs.io/en/latest/pyserial_api.html
+# http://ni-microwavecomponents.com/manuals/5580510-01.pdf
+
 import serial
 import time
 
@@ -34,7 +38,18 @@ class FSWSynt(object):
         cmd_string = 'FREQ ' + str(freq) + 'GHz\r'
         self.write(str.encode(cmd_string))
         return "Frequency set to "+str(freq)+" GHz."
-    
+
+    def get_power(self): # Value in dBm
+        pow = self.ask(b'POW?\r')
+        return pow
+
+    def set_power(self,pow):     # default units in GHz
+        if (pow < -25 or pow > 15):
+            return "Invalid power! FSW-0010 supports [-25 dBm, +15 dBm]" # step of 0.01
+        cmd_string = 'POW ' + str(pow) + '\r' # not sure about the \r
+        self.write(str.encode(cmd_string))
+        return "Frequency set to "+str(pow)+" dBm."
+
     def __enter__(self):
         return self
     

@@ -1,9 +1,17 @@
 #useful functions for plot, derivatives...
 
-from unicodedata import name
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+
+#store data in hdf5 file
+#first pass the file name, then the name of the dataset and the matrix to store. Repeat the last two steps for each matrix
+def storage_hdf5(file, *args):
+    with h5py.File(file, 'w') as hdf:
+        for i in range(0, len(args), 2):  
+            hdf.create_dataset(args[i], data=args[i+1], compression='gzip', compression_opts=9)
+            #hdf.create_dataset('q_signal', data=q_matrix, compression='gzip', compression_opts=9)
+    return None
 
 #returns two matrices, I and Q
 #useful for acquisition, where many records are acquired
@@ -102,7 +110,7 @@ def big_plot_from_array(I, Q, ref, step, begin = -1, end = -1, name = 'test', sa
     axs[1, 0].set_xlabel('freq[GHz]')
     axs[1, 0].set_ylabel("Q")
     axs[0, 1].scatter(Q[begin:end], I[begin:end], marker='.')
-    axs[0, 1].set_title("Piano IQ")
+    axs[0, 1].set_title("IQ plane")
     axs[0, 1].set_xlabel('Q')
     axs[0, 1].set_ylabel("I")
     axs[1, 1].scatter(x[begin:end],((np.array(Q)**2+np.array(I)**2)**0.5)[begin:end], marker='.') #non affidabile senza aver rinormalizzato I e Q

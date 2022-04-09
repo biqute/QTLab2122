@@ -8,6 +8,7 @@ import time
 # Record length is sometimes smaller than set length. (Problem 1)
 # We have solved the fact that the record length was sometimes less than the set length, we need to set the timeout on the fetch() function
 # This solution works well (and always) for the IMMEDIATE, we need to understand the EDGE, maybe we can set a long timeout
+# I on channel 0, Q on channel 1
 
 ########## Parameters that can be setted
 freq        = 5.86905                # frequency chosen to study I and Q (GHz)
@@ -34,9 +35,31 @@ trigger = dict(
     #print(synt.get_ID())
     synt.set_freq(freq)
     time.sleep(0.005) #IMPORTANT for real time communication
-    print('The current frequency is: ' + synt.get_freq(freq))    #just to check if the freqency has been set correctly
+    print('The current frequency is: ' + synt.get_freq())    #just to check if the freqency has been set correctly
 '''
+
+samples = []
 with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=channels, sample_rate=sample_rate, length=length) as daq:
     daq.fetch()
     daq.fill_matrix()
-    #daq.storage_hdf5(file_name + '.h5')
+    daq.get_timestamps(file_name + '_timestamps.h5')
+    daq.storage_hdf5(file_name + '.h5')
+    samples = daq.get_hdf5(file_name + '.h5')
+
+indexes = daq.derivative_trigger_matrix(samples) # set the correct parameters for the savgol filter
+
+# code to align the samples
+# e.g. take the first entry as a reference and move the other
+delta = indexes - indexes.min()
+end = indexes - indexes.max()
+# at the end it's necessary to cut the samples to have them all of the same length
+new = []
+for i in range(len(samples)):
+    if end[i] == 0:
+        new.append(samples[i][int(delta[i]):])
+    else:
+        new.append(samples[i][int(delta[i]):int(end[i])])
+
+# import utils and use storage hdf5 to store the new matrices
+from instruments.utils import *
+storage_hdf5(file_name + '_savgol.h5')
