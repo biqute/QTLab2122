@@ -178,9 +178,6 @@ class PXIeSignalAcq(object):
 
     def get_hdf5(self, name):
         with h5py.File(name, 'r') as hdf:
-            for i in range(0,self.records):
-                print("Segnale I")
-                print(np.array(hdf['i_signal'])[i])
-                print("Segnale Q")
-                print(np.array(hdf['q_signal'])[i])
-        return None
+            I = np.array(hdf['i_signal'])
+            Q = np.array(hdf['q_signal'])
+        return I, Q

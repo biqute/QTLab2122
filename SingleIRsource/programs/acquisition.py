@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from instruments.FSW_0010 import *
 from instruments.PXIe_5170R import *
+from instruments.utils import *
 
 # LOG SYSTEM
 # If we want define different logger, we need to define different handlers
@@ -58,28 +59,27 @@ trigger = dict(
     print('The current frequency is: ' + synt.get_freq())    #just to check if the freqency has been set correctly
 '''
 
-samples = []
+I, Q = []
 with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=channels, sample_rate=sample_rate, length=length) as daq:
     daq.fetch()
     daq.fill_matrix()
     daq.get_timestamps(file_name + '_timestamps.h5')
     daq.storage_hdf5(file_name + '.h5')
-    samples = daq.get_hdf5(file_name + '.h5')
+    I, Q = daq.get_hdf5(file_name + '.h5')
 
-indexes = daq.derivative_trigger_matrix(samples) # set the correct parameters for the savgol filter
+indexes = daq.derivative_trigger_matrix(I) # choose whetrher to use I or Q for the savgol filter and choose parameters
 
 # code to align the samples
 # e.g. take the first entry as a reference and move the other
-delta = indexes - indexes.min()
-end = indexes - indexes.max()
+delta = (indexes - indexes.min()).astype(int)
+end = (indexes - indexes.max() - 1).astype(int)
 # at the end it's necessary to cut the samples to have them all of the same length
-new = []
-for i in range(len(samples)):
-    if end[i] == 0:
-        new.append(samples[i][int(delta[i]):])
-    else:
-        new.append(samples[i][int(delta[i]):int(end[i])])
+# - 1 in end needed to avoid Q[i][sth:0] that happened when indexes=indexes.max()
+# and returned an empty array
+new_I, new_Q = [], []
+for i in range(len(I)):
+    new_I.append(I[i][delta[i]:end[i]])
+    new_Q.append(Q[i][delta[i]:end[i]])
 
-# import utils and use storage hdf5 to store the new matrices
-from instruments.utils import *
-storage_hdf5(file_name + '_savgol.h5')
+# Use storage hdf5 from utils to store the new matrices
+storage_hdf5(file_name + '_savgol.h5', 'i_signal', new_I, 'q_signal', new_Q)
