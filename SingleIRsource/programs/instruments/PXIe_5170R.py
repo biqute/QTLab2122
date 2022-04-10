@@ -4,19 +4,40 @@
 # niscope module examples: https://nimi-python.readthedocs.io/en/master/niscope/examples.html
 # PXIe manual: https://manualzz.com/doc/6830056/ni-scope-software-user-manual
 
+import logging
 import niscope as ni
 import h5py 
 from scipy.signal import savgol_filter
 from scipy.ndimage import convolve
 import numpy as np
+from datetime import datetime
+
+date = datetime.now().strftime("%m-%d-%Y")
 
 class PXIeSignalAcq(object):
+
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+
+    file_handler = logging.FileHandler('logs/session_' + date + '.log')
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)
+    logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel(logging.DEBUG)
+    logger.addHandler(console_handler)
+
     def __init__(self, device_address, trigger: dict, channels=[0,1], records=3, sample_rate=5e7, length=4000, ref_pos=40.0):
+        
         try:
             self.session = ni.Session(device_address)
-            print('Connected to PXIe :)')
+
+            self.logger.info('Connected to PXIe')
         except:
-            print('Not connected to PXIe :(')
+            self.logger.info('Not connected to PXIe')
 
         self.waveform, self.i_matrix, self.q_matrix = [], [], []
 

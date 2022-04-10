@@ -7,7 +7,7 @@ I, Q = get_hdf5('scan_freq.h5')
 
 #Choose on which channel apply the trigger (e.g. I)
 min = np.amin(I)
-max = np.amx(I)
+max = np.amax(I)
 threshold = np.linspace(min, max, 1000)
 
 counts = np.zeros(len(threshold))

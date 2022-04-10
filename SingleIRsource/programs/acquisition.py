@@ -1,6 +1,26 @@
+import logging
+from datetime import datetime
 from instruments.FSW_0010 import *
 from instruments.PXIe_5170R import *
-import time
+
+# LOG SYSTEM
+# If we want define different logger, we need to define different handlers
+
+date = datetime.now().strftime("%m-%d-%Y")
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+
+file_handler = logging.FileHandler('logs/session_' + date + '.log')
+file_handler.setFormatter(formatter)
+file_handler.setLevel(logging.DEBUG)
+logger.addHandler(file_handler)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+console_handler.setLevel(logging.DEBUG)
+logger.addHandler(console_handler)
 
 # IMPORTANT INFOS
 # Before acquiring, we must evaluate the dependence between: sample_rate, length (record) and pulse frequency
