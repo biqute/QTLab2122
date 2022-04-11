@@ -1,6 +1,5 @@
 from instruments.FSW_0010 import *
 from instruments.PXIe_5170R import *
-import time
 
 ########## parameters that can be changed
 freq              = 5.86905       #frequency chosen to study I and Q (GHz)
@@ -25,8 +24,7 @@ trigger = dict(
     print('The current frequency is: ' + synt.get_freq(freq))'''    #just to check if the freqency has been set correctly
 
 with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=channels, sample_rate=sample_rate, length=1, ref_pos=0.0) as daq:
-    daq.continuos_acq(total_samples, samples_per_fetch)
-    #daq.fill_matrix()
+    daq.continuous_acq(total_samples, samples_per_fetch)
     daq.storage_hdf5(file_name + '.h5')
 
 

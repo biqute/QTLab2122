@@ -1,4 +1,5 @@
 import logging
+import sys 
 from datetime import datetime
 from instruments.FSW_0010 import *
 from instruments.PXIe_5170R import *
@@ -23,6 +24,8 @@ console_handler.setFormatter(formatter)
 console_handler.setLevel(logging.DEBUG)
 logger.addHandler(console_handler)
 
+logger.info("START EXECUTION")
+
 # IMPORTANT INFOS
 # Before acquiring, we must evaluate the dependence between: sample_rate, length (record) and pulse frequency
 # Usually sample_rate/length = 1e3
@@ -39,6 +42,13 @@ channels    = [0,1]                  # list of enabled channels
 sample_rate = 1e7                    # rate of points sampling of PXIe-5170R
 length      = 1000                   # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
 
+logger.debug("Frequency: " + str(freq))
+logger.debug("Filename: " + file_name)
+logger.debug("Records: " + str(records))
+logger.debug("Channels: " + str(channels))
+logger.debug("Sample rate: " + str(sample_rate))
+logger.debug("Length: " + str(length))
+
 trigger = dict(
     trigger_type   = 'EDGE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
     trigger_source = '0',
@@ -48,6 +58,8 @@ trigger = dict(
 )
 ##########
 
+for key in trigger:
+    logger.debug(str(key) + ": " + trigger[key])
 
 # Decide how many points we want based on signal length and sample_rate
 # It seems that length indicates how long it is open, if it is 10k but the trigger goes off after 1000 it takes 9k (..?)
@@ -66,8 +78,8 @@ with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=chann
     daq.storage_hdf5(file_name + '.h5')
     I, Q, timestamp = daq.get_hdf5(file_name + '.h5')
 
-indexes = np.array(derivative_trigger_matrix(I, window_ma = 5, poly=6)) # choose whetrher to use I or Q for the savgol filter and choose parameters
-print(indexes)
+indexes = np.array(derivative_trigger_matrix(I)) # choose whetrher to use I or Q for the savgol filter and choose parameters
+
 # code to align the samples
 # e.g. take the first entry as a reference and move the other
 delta = (indexes - indexes.min()).astype(int)
@@ -75,10 +87,12 @@ end = (indexes - indexes.max() - 1).astype(int)
 # at the end it's necessary to cut the samples to have them all of the same length
 # - 1 in end needed to avoid Q[i][sth:0] that happened when indexes=indexes.max()
 # and returned an empty array
+
 new_I, new_Q = [], []
+
 for i in range(len(I)):
     new_I.append(I[i][delta[i]:end[i]])
     new_Q.append(Q[i][delta[i]:end[i]])
-print(np.shape(new_I))
+
 # Use storage hdf5 from utils to store the new matrices
 storage_hdf5(file_name + '_savgol.h5', 'i_signal', new_I, 'q_signal', new_Q)

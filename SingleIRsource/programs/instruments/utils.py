@@ -88,10 +88,10 @@ def der_IQ(x, I, Q, begin=-1, end=-1, plot = False):
     if plot:
         plt.plot(x[begin:(end-1)], tot)
     if -tot.min() > tot.max():
-        print('Point found during the falling at position %d with a frequency of %.5f.' %(begin + np.argmin(tot), x[begin + np.argmin(tot)])) #per il massimo in discesa
+        print('Point found during the falling at position %d with a frequency of %.5f.' %(begin + np.argmin(tot), x[begin + np.argmin(tot)])) # For the max in falling
         return begin + np.argmin(tot)
     else:
-        print('Point found during the rising at position %d with a frequency of %.5f.' %(begin + np.argmax(tot), x[begin + np.argmax(tot)])) #per il massimo in salita
+        print('Point found during the rising at position %d with a frequency of %.5f.' %(begin + np.argmax(tot), x[begin + np.argmax(tot)])) # For the max in rising
         return begin + np.argmax(tot)
 
 #plot of I, Q, IQ, module from the arrays of I and Q
@@ -103,7 +103,7 @@ def big_plot_from_array(I, Q, ref, step, begin = -1, end = -1, name = 'test', sa
         x.append(ref + i*step)
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
     #fig.suptitle('Plot of '+ file_name)
-    axs[0, 0].scatter(x[begin:end], I[begin:end], marker='.') #non sempre funziona, errore lunghezza I q x diverse..?
+    axs[0, 0].scatter(x[begin:end], I[begin:end], marker='.')
     axs[0, 0].set_title("I")
     axs[0, 0].set_xlabel('freq[GHz]')
     axs[0, 0].set_ylabel("I")
@@ -115,7 +115,7 @@ def big_plot_from_array(I, Q, ref, step, begin = -1, end = -1, name = 'test', sa
     axs[0, 1].set_title("IQ plane")
     axs[0, 1].set_xlabel('Q')
     axs[0, 1].set_ylabel("I")
-    axs[1, 1].scatter(x[begin:end],((np.array(Q)**2+np.array(I)**2)**0.5)[begin:end], marker='.') #non affidabile senza aver rinormalizzato I e Q
+    axs[1, 1].scatter(x[begin:end],((np.array(Q)**2+np.array(I)**2)**0.5)[begin:end], marker='.') # Not reliable because I,Q normalization
     axs[1, 1].set_title("sqrt(I^2 + Q^2)") 
     axs[1, 1].set_xlabel('freq[GHz]')
     #axs[0, 0].set_ylabel("AU")
@@ -149,7 +149,7 @@ def big_plot_from_file(file, ref, step, record = 0, begin = -1, end = -1, save =
     axs[0, 1].set_title("Piano IQ")
     axs[0, 1].set_xlabel('Q')
     axs[0, 1].set_ylabel("I")
-    axs[1, 1].scatter(x[begin:end],((np.array(Q)**2+np.array(I)**2)**0.5)[begin:end], marker='.') #non affidabile senza aver rinormalizzato I e Q
+    axs[1, 1].scatter(x[begin:end],((np.array(Q)**2+np.array(I)**2)**0.5)[begin:end], marker='.') # Not reliable because I,Q normalization
     axs[1, 1].set_title("sqrt(I^2 + Q^2)")
     axs[1, 1].set_xlabel('freq[GHz]')
     #axs[1, 1].set_ylabel("AU")
@@ -176,7 +176,7 @@ def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity
     for i in range(len(sample)):
 
         first_derivative = np.gradient(moving_averages[i])
-        std = np.std(first_derivative[0:50])/2 #50 will become a function of length and pos_ref in pxie
+        std = np.std(first_derivative[0:50])/2 #50 will become a function of length and pos_ref in PXIe
         index_min = first_derivative.argmax() if polarity == 1 else first_derivative.argmin()
         
         rise_points = 0

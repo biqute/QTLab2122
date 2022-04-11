@@ -4,12 +4,13 @@
 # niscope module examples: https://nimi-python.readthedocs.io/en/master/niscope/examples.html
 # PXIe manual: https://manualzz.com/doc/6830056/ni-scope-software-user-manual
 
+import h5py 
 import logging
 import niscope as ni
-import h5py 
 import numpy as np
+
 from datetime import datetime
-import time 
+from sys import exit
 
 date = datetime.now().strftime("%m-%d-%Y")
 
@@ -26,7 +27,7 @@ class PXIeSignalAcq(object):
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
-    console_handler.setLevel(logging.DEBUG)
+    console_handler.setLevel(logging.INFO)
     logger.addHandler(console_handler)
 
     def __init__(self, device_address, trigger: dict, channels=[0,1], records=3, sample_rate=5e7, length=4000, ref_pos=40.0):
@@ -34,9 +35,9 @@ class PXIeSignalAcq(object):
         try:
             self.session = ni.Session(device_address)
 
-            self.logger.info('Connected to PXIe')
+            self.logger.debug('Connected to PXIe')
         except:
-            self.logger.info('Not connected to PXIe')
+            self.logger.debug('Not connected to PXIe')
 
         self.waveform, self.i_matrix, self.q_matrix, self.timestamp = [], [], [], []
 
@@ -57,57 +58,99 @@ class PXIeSignalAcq(object):
             self.session.trigger_level      = float(trigger["trigger_level"])
             self.session.trigger_delay_time = float(trigger["trigger_delay"])
 
-        self.session.initiate()  # If fetch() don't comment, otherwise comment it
+        self.get_status()
 
     def __enter__(self):
         return self
     
     def __exit__(self, *exc):
-        self.session.close()
+        try:
+            self.session.close()
+        except ni.errors.DriverError as err:
+            self.logger.error(str(err))
+            exit() 
 
     def close(self):
-        self.session.close()
+        try:
+            self.session.close()
+        except ni.errors.DriverError as err:
+            self.logger.error(str(err))
+            exit() 
 
     def read(self):
-        self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=0) for i in self.channels])
-        #print(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
-        #self.i_matrix.append(np.array(self.session.channels[2].read(num_samples=self.length, timeout=0)[0].samples))
-        #self.q_matrix.append(np.array(self.session.channels[3].read(num_samples=self.length, timeout=0)[0].samples))
+        try:
+            self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=0) for i in self.channels])
+        except ni.errors.DriverError as err:
+            self.logger.error(str(err))
+            exit()
+
+        self.get_status()
+        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + ni.Session.acquisition_start_time)
+        self.logger.debug('Actual number of samples acquired in the record: ' + ni.Session.points_done)
+        self.logger.debug('Number of records that have been completely acquired: ' + ni.Session.records_done)
+
         return None
 
     def fetch(self):
-        start = time.time()
         try:
-            self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=10, relative_to = ni.FetchRelativeTo.PRETRIGGER) for i in self.channels])
+            self.session.initiate()
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
-        self.logger.info(time.time()-start)
+            exit()
+
+        self.get_status()
+
+        try:
+            self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=10, relative_to=ni.FetchRelativeTo.PRETRIGGER) for i in self.channels])
+        except ni.errors.DriverError as err:
+            self.logger.error(str(err))
+
+        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + ni.Session.acquisition_start_time)
+        self.logger.debug('Actual number of samples acquired in the record: ' + ni.Session.points_done)
+        self.logger.debug('Number of records that have been completely acquired: ' + ni.Session.records_done)
+        
+        self.get_status()
+
         return None
 
-    def continuos_acq(self, total_samples, samples_per_fetch):
+    def continuous_acq(self, total_samples, samples_per_fetch): # Need timestamp in the segmentation
         current_pos = 0
         self.waveform = [np.ndarray(total_samples, dtype=np.float64) for c in self.channels]
+
+        self.get_status()
+
         while current_pos < total_samples:
             for channel, wfm in zip(self.channels, self.waveform):
-                self.session.channels[channel].fetch_into(wfm[current_pos:current_pos + samples_per_fetch], relative_to=ni.FetchRelativeTo.READ_POINTER,
-                                                          offset=0, record_number=0, num_records=1)
+                try:
+                    self.session.channels[channel].fetch_into(wfm[current_pos:current_pos + samples_per_fetch], relative_to=ni.FetchRelativeTo.READ_POINTER, offset=0, record_number=0, num_records=1)
+                except ni.errors.DriverError as err:
+                    self.logger.error(str(err))
+
             current_pos += samples_per_fetch
+
         self.i_matrix.append(np.array(self.waveform[0]))
         self.q_matrix.append(np.array(self.waveform[1]))
 
+        self.logger.debug("Raw data I and Q were collected for continuous acquisition")
+
         return None
 
-    def acq(self): # NEED TEST
+    def acq(self): # Need test
         self.i_matrix.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=0)[0].samples))
         self.q_matrix.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=0)[0].samples))
+
         return None
 
-    def fill_matrix(self, iter=0, return_data = False):
+    def fill_matrix(self, iter=0, return_data=False):
         iter = self.records if iter == 0 else iter
+        
         for i in range(iter):
             self.i_matrix.append(np.array(self.waveform[0][i].samples))
             self.q_matrix.append(np.array(self.waveform[1][i].samples))
             self.timestamp.append(self.waveform[0][i].absolute_initial_x)
+            
+        self.logger.debug("Raw data I and Q were collected for trigger acquisition")
+
         if return_data:
             return self.i_matrix, self.q_matrix, self.timestamp
         else:
@@ -117,10 +160,14 @@ class PXIeSignalAcq(object):
         with h5py.File(name, 'w') as hdf:
             hdf.create_dataset('i_signal', data=self.i_matrix, compression='gzip', compression_opts=9)
             hdf.create_dataset('q_signal', data=self.q_matrix, compression='gzip', compression_opts=9)
+            
             try:
                 hdf.create_dataset('timestamp', data=self.timestamp, compression='gzip', compression_opts=9)
             except:
                 pass
+
+        self.logger.debug("Raw data I and Q were stored in an HDF5 file: " + name)
+
         return None
 
     def get_hdf5(self, name):
@@ -128,4 +175,11 @@ class PXIeSignalAcq(object):
             I = np.array(hdf['i_signal'])
             Q = np.array(hdf['q_signal'])
             timestamp = np.array(hdf['timestamp'])
+
+        self.logger.debug("Load the HDF5 file: " + name)
+
         return I, Q, timestamp
+
+    def get_status(self):
+        self.logger.debug("Acquisition status: " + ni.Session.acquisition_status())
+        return None
