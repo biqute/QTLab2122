@@ -33,11 +33,11 @@ logger.addHandler(console_handler)
 
 ########## Parameters that can be setted
 freq        = 5.86905                # frequency chosen to study I and Q (GHz)
-file_name   = 'TEST_100_1E7_10000'   # name of the file where data will be saved
-records     = 1000                   # numer of records to store
+file_name   = 'test5'   # name of the file where data will be saved
+records     = 100                   # numer of records to store
 channels    = [0,1]                  # list of enabled channels
-sample_rate = 1e5                    # rate of points sampling of PXIe-5170R
-length      = 10000                   # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
+sample_rate = 1e7                    # rate of points sampling of PXIe-5170R
+length      = 1000                   # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
 
 trigger = dict(
     trigger_type   = 'EDGE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
@@ -59,16 +59,15 @@ trigger = dict(
     print('The current frequency is: ' + synt.get_freq())    #just to check if the freqency has been set correctly
 '''
 
-I, Q = []
+I, Q, timestamp = [], [], []
 with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=channels, sample_rate=sample_rate, length=length) as daq:
     daq.fetch()
     daq.fill_matrix()
-    daq.get_timestamps(file_name + '_timestamps.h5')
     daq.storage_hdf5(file_name + '.h5')
-    I, Q = daq.get_hdf5(file_name + '.h5')
+    I, Q, timestamp = daq.get_hdf5(file_name + '.h5')
 
-indexes = daq.derivative_trigger_matrix(I) # choose whetrher to use I or Q for the savgol filter and choose parameters
-
+indexes = np.array(derivative_trigger_matrix(I, window_ma = 5, poly=6)) # choose whetrher to use I or Q for the savgol filter and choose parameters
+print(indexes)
 # code to align the samples
 # e.g. take the first entry as a reference and move the other
 delta = (indexes - indexes.min()).astype(int)
@@ -80,6 +79,6 @@ new_I, new_Q = [], []
 for i in range(len(I)):
     new_I.append(I[i][delta[i]:end[i]])
     new_Q.append(Q[i][delta[i]:end[i]])
-
+print(np.shape(new_I))
 # Use storage hdf5 from utils to store the new matrices
 storage_hdf5(file_name + '_savgol.h5', 'i_signal', new_I, 'q_signal', new_Q)

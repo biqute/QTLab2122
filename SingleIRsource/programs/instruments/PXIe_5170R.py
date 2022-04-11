@@ -7,10 +7,9 @@
 import logging
 import niscope as ni
 import h5py 
-from scipy.signal import savgol_filter
-from scipy.ndimage import convolve
 import numpy as np
 from datetime import datetime
+import time 
 
 date = datetime.now().strftime("%m-%d-%Y")
 
@@ -39,7 +38,7 @@ class PXIeSignalAcq(object):
         except:
             self.logger.info('Not connected to PXIe')
 
-        self.waveform, self.i_matrix, self.q_matrix = [], [], []
+        self.waveform, self.i_matrix, self.q_matrix, self.timestamp = [], [], [], []
 
         self.length   = length
         self.trigger  = trigger
@@ -69,60 +68,6 @@ class PXIeSignalAcq(object):
     def close(self):
         self.session.close()
 
-    def vertex_parabola(x2, y1, y2, y3):
-        x1 = x2 - 1
-        x3 = x2 + 1
-        b = x3 * x3 * (y2 - y1) + x2 * x2 * (y1 - y3) + x1 * x1 * (y3 - y2)
-        a = (y2 - y3) * x1 + (y3 - y1) * x2 + (y1 - y2) * x3
-
-        return -b/(2*a)
-
-    def derivative_trigger_matrix(self, sample, window_ma=20, wl=60, poly=4, n=2, vertex=True):
-        weights = np.full((1, window_ma), 1/window_ma)
-        moving_averages = convolve(sample, weights, mode='mirror')
-
-        index_mins = []
-
-        for i in range(len(sample)):
-
-            first_derivative = np.gradient(moving_averages[i])
-            std = np.std(first_derivative[0:50])/2 #50 will become a function of length and pos_ref in pxie
-            index_min = first_derivative.argmin()
-            
-            rise_points = 0
-
-            while first_derivative[index_min - rise_points] < -std:
-                rise_points += 1
-
-            a = 10
-            start = index_min - rise_points
-
-            if start < a:
-                start = a
-
-            if start > len(sample[i])-2*a:
-                start = len(sample[i])-2*a
-            
-            end = start + 2*a
-            begin = start - a
-            
-            derivative_func = savgol_filter(sample[i], wl, poly, n, delta=1, mode='mirror')
-
-            x2 = begin+1+(derivative_func[begin+1:end-1].argmin())
-
-            if vertex:
-                y1 = derivative_func[x2-1]
-                y2 = derivative_func[x2]
-                y3 = derivative_func[x2+1]
-                min = int(np.round(self.vertex_parabola(x2, y1, y2, y3)))
-            else:
-                min = x2
-
-            index_mins.append(min)
-
-        return index_mins
-
-
     def read(self):
         self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=0) for i in self.channels])
         #print(np.array(self.session.channels[0].read(num_samples=self.length, timeout=0)[0].samples))
@@ -131,7 +76,12 @@ class PXIeSignalAcq(object):
         return None
 
     def fetch(self):
-        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=10, relative_to = ni.FetchRelativeTo.PRETRIGGER) for i in self.channels])
+        start = time.time()
+        try:
+            self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=10, relative_to = ni.FetchRelativeTo.PRETRIGGER) for i in self.channels])
+        except ni.errors.DriverError as err:
+            self.logger.error(str(err))
+        self.logger.info(time.time()-start)
         return None
 
     def continuos_acq(self, total_samples, samples_per_fetch):
@@ -142,6 +92,9 @@ class PXIeSignalAcq(object):
                 self.session.channels[channel].fetch_into(wfm[current_pos:current_pos + samples_per_fetch], relative_to=ni.FetchRelativeTo.READ_POINTER,
                                                           offset=0, record_number=0, num_records=1)
             current_pos += samples_per_fetch
+        self.i_matrix.append(np.array(self.waveform[0]))
+        self.q_matrix.append(np.array(self.waveform[1]))
+
         return None
 
     def acq(self): # NEED TEST
@@ -154,30 +107,25 @@ class PXIeSignalAcq(object):
         for i in range(iter):
             self.i_matrix.append(np.array(self.waveform[0][i].samples))
             self.q_matrix.append(np.array(self.waveform[1][i].samples))
+            self.timestamp.append(self.waveform[0][i].absolute_initial_x)
         if return_data:
-            return self.i_matrix, self.q_matrix
+            return self.i_matrix, self.q_matrix, self.timestamp
         else:
             return None
-    
-    def get_timestamps(self, name):
-        i_time = []
-        q_time = []
-        for i in range(self.records):
-            i_time.append(self.waveform[0][i].absolute_initial_x) #if this doesn't work, try str(waveforms[i]) for some i that can be found with 'Waveform {0} information:'.format(i)
-            q_time.append(self.waveform[1][i].absolute_initial_x)
-        with h5py.File(name, 'w') as hdf:
-            hdf.create_dataset('i_timestamps', data=i_time, compression='gzip', compression_opts=9)
-            hdf.create_dataset('q_timestamps', data=q_time, compression='gzip', compression_opts=9)
-        return None
     
     def storage_hdf5(self, name):
         with h5py.File(name, 'w') as hdf:
             hdf.create_dataset('i_signal', data=self.i_matrix, compression='gzip', compression_opts=9)
             hdf.create_dataset('q_signal', data=self.q_matrix, compression='gzip', compression_opts=9)
+            try:
+                hdf.create_dataset('timestamp', data=self.timestamp, compression='gzip', compression_opts=9)
+            except:
+                pass
         return None
 
     def get_hdf5(self, name):
         with h5py.File(name, 'r') as hdf:
             I = np.array(hdf['i_signal'])
             Q = np.array(hdf['q_signal'])
-        return I, Q
+            timestamp = np.array(hdf['timestamp'])
+        return I, Q, timestamp

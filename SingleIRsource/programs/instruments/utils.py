@@ -3,6 +3,8 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter
+from scipy.ndimage import convolve
 
 #store data in hdf5 file
 #first pass the file name, then the name of the dataset and the matrix to store. Repeat the last two steps for each matrix
@@ -156,3 +158,56 @@ def big_plot_from_file(file, ref, step, record = 0, begin = -1, end = -1, save =
         fig.patch.set_facecolor('white')
         fig.savefig('../plot/' + file + '.png', dpi=300)
     return None
+
+def vertex_parabola(x2, y1, y2, y3):
+    x1 = x2 - 1
+    x3 = x2 + 1
+    b = x3 * x3 * (y2 - y1) + x2 * x2 * (y1 - y3) + x1 * x1 * (y3 - y2)
+    a = (y2 - y3) * x1 + (y3 - y1) * x2 + (y1 - y2) * x3
+
+    return -b/(2*a)
+
+def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity=1, vertex=True):
+    weights = np.full((1, window_ma), 1/window_ma)
+    moving_averages = convolve(sample, weights, mode='mirror')
+
+    index_mins = []
+
+    for i in range(len(sample)):
+
+        first_derivative = np.gradient(moving_averages[i])
+        std = np.std(first_derivative[0:50])/2 #50 will become a function of length and pos_ref in pxie
+        index_min = first_derivative.argmax() if polarity == 1 else first_derivative.argmin()
+        
+        rise_points = 0
+
+        while first_derivative[index_min - rise_points] < -std:
+            rise_points += 1
+
+        a = 10
+        start = index_min - rise_points
+
+        if start < a:
+            start = a
+
+        if start > len(sample[i])-2*a:
+            start = len(sample[i])-2*a
+        
+        end = start + 2*a
+        begin = start - a
+        
+        derivative_func = savgol_filter(sample[i], wl, poly, n, delta=1, mode='mirror')
+
+        x2 = begin+1+(derivative_func[begin+1:end-1].argmin())
+
+        if vertex:
+            y1 = derivative_func[x2-1]
+            y2 = derivative_func[x2]
+            y3 = derivative_func[x2+1]
+            min = int(np.round(vertex_parabola(x2, y1, y2, y3)))
+        else:
+            min = x2
+
+        index_mins.append(min)
+
+    return index_mins
