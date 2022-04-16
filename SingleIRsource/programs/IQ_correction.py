@@ -1,5 +1,6 @@
 from instruments.FSW_0010 import *
 from instruments.PXIe_5170R import *
+from instruments.IQ_conversion import *
 
 ########## Parameters that can be setted
 freq1       = 5.869050          # frequency chosen to study I and Q (GHz)
@@ -44,7 +45,8 @@ with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=chann
 # fit of I and Q with an ellipse to retrieve a, b, phi 
 # https://github.com/bdhammel/least-squares-ellipse-fitting
 # https://pypi.org/project/lsq-ellipse/#description
-a, b, phi = 0, 0, 0
+fit = ellipse_fit(I, Q)
+center, a, b, phi = fit.as_parameters()
 # From these we can determine A_I, A_Q, gamma, the parameters that characterize a non-ideal IQ mixer
 # The center of the ellipse is at (I0, Q0)
 
@@ -68,5 +70,6 @@ with open('IQ_mixer_calibration.csv','a+') as o:
     o.write("{};{};{};{};{};{}\n".format(freq1, A_I, A_Q, gamma, alpha_1, alpha_2))
     print('done')
 
-# we have to test also different powers?
+# we have to test also different powers? no, it doesn't change so much
+# loop only on resonance frequencies
 # loop on power and frequencies -> in this case no with, open the channel only once
