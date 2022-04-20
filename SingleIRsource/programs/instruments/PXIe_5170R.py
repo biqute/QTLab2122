@@ -105,9 +105,9 @@ class PXIeSignalAcq(object):
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
 
-        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + ni.Session.acquisition_start_time)
-        self.logger.debug('Actual number of samples acquired in the record: ' + ni.Session.points_done)
-        self.logger.debug('Number of records that have been completely acquired: ' + ni.Session.records_done)
+        #self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(ni.Session.acquisition_start_time))
+        #self.logger.debug('Actual number of samples acquired in the record: ' + str(ni.Session.points_done))
+        #self.logger.debug('Number of records that have been completely acquired: ' + str(ni.Session.records_done))
         
         self.get_status()
 
@@ -181,5 +181,5 @@ class PXIeSignalAcq(object):
         return I, Q, timestamp
 
     def get_status(self):
-        self.logger.debug("Acquisition status: " + ni.Session.acquisition_status())
+        self.logger.debug("Acquisition status: " + str(self.session.acquisition_status())) # Understand why is print all this stuff in log
         return None

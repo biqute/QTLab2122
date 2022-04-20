@@ -36,7 +36,7 @@ logger.info("START EXECUTION")
 
 ########## Parameters that can be setted
 freq        = 5.86905                # frequency chosen to study I and Q (GHz)
-file_name   = 'test5'   # name of the file where data will be saved
+file_name   = 'test'   # name of the file where data will be saved
 records     = 100                   # numer of records to store
 channels    = [0,1]                  # list of enabled channels
 sample_rate = 1e7                    # rate of points sampling of PXIe-5170R
