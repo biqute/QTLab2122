@@ -211,3 +211,59 @@ def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity
         index_mins.append(min)
 
     return index_mins
+
+def segmentation_index(sample, window_ma=20, polarity=1, threshold=0):
+    weights = np.full(window_ma, 1/window_ma)
+    moving_averages = convolve(sample, weights, mode='mirror')
+    first_derivative = np.gradient(moving_averages)
+
+    count = 0
+    index = []
+
+    if polarity == 1:
+        for i in range(len(first_derivative)):
+            if first_derivative[i] > threshold:
+                count += 1
+            else:
+                count = 0
+
+            if count == 5:
+                index.append(i)
+                count = 0
+
+                while(first_derivative[i] > threshold):
+                    i += 1
+    else:
+        for i in range(len(first_derivative)):
+            if first_derivative[i] < threshold:
+                count += 1
+            else:
+                count = 0
+
+            if count == 5:
+                index.append(i)
+                count = 0
+
+                while(first_derivative[i] < threshold):
+                    i += 1
+
+    return index
+
+def segmentation_iq(i, q, index, ref_pos=0.3, length=1000):
+    i_matrix = []
+    q_matrix = []
+
+    pre = int(ref_pos*length)
+    post = int((1-ref_pos)*length)
+
+    for k in range(len(index)):
+
+        j = index[k]
+
+        i_matrix.append(i[j-pre:j+post])
+        q_matrix.append(q[j-pre:j+post])
+
+        if (index[k+1]-j) < 50:
+            k = k+1
+
+    return i_matrix, q_matrix
