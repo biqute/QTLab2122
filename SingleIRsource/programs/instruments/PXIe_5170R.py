@@ -114,6 +114,12 @@ class PXIeSignalAcq(object):
         return None
 
     def continuous_acq(self, total_samples, samples_per_fetch): # Need timestamp in the segmentation
+        try:
+            self.session.initiate()
+        except ni.errors.DriverError as err:
+            self.logger.error(str(err))
+            exit()
+        
         current_pos = 0
         self.waveform = [np.ndarray(total_samples, dtype=np.float64) for c in self.channels]
 
@@ -130,6 +136,9 @@ class PXIeSignalAcq(object):
 
         self.i_matrix.append(np.array(self.waveform[0]))
         self.q_matrix.append(np.array(self.waveform[1]))
+
+        #self.i_matrix = self.i_matrix[0]
+        #self.q_matrix = self.q_matrix[0]
 
         self.logger.debug("Raw data I and Q were collected for continuous acquisition")
 
