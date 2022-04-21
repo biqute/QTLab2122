@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from instruments.utils import *
+from src.utils import *
 
 # Open h5 file from acquisition with a low trigger and get the waveform matrices
 I, Q = get_hdf5('scan_freq.h5')

@@ -1,6 +1,6 @@
-from instruments.FSW_0010 import *
-from instruments.PXIe_5170R import *
-from instruments.utils import *
+from src.FSW_0010 import *
+from src.PXIe_5170R import *
+from src.utils import *
 
 ########## parameters that can be changed
 freq              = 5.86905       #frequency chosen to study I and Q (GHz)

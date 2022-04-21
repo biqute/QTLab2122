@@ -148,6 +148,10 @@ class PXIeSignalAcq(object):
         self.i_matrix.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=0)[0].samples))
         self.q_matrix.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=0)[0].samples))
 
+        # test this piece of code, if works it avoid us some offline data processing and reduces the amount of data stored
+        # self.q_matrix.extend(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=0)[0].samples).mean())
+        # self.q_matrix.extend(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=0)[0].samples).mean())
+
         return None
 
     def fill_matrix(self, iter=0, return_data=False):

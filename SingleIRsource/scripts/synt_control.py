@@ -1,4 +1,4 @@
-from instruments import FSWSynt
+from src import FSWSynt
 import time 
 
 ########## parameters that can be changed

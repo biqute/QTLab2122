@@ -1,9 +1,9 @@
 import logging
 import sys 
 from datetime import datetime
-from instruments.FSW_0010 import *
-from instruments.PXIe_5170R import *
-from instruments.utils import *
+from src.FSW_0010 import *
+from src.PXIe_5170R import *
+from src.utils import *
 
 # LOG SYSTEM
 # If we want define different logger, we need to define different handlers
@@ -35,19 +35,21 @@ logger.info("START EXECUTION")
 # I on channel 0, Q on channel 1
 
 ########## Parameters that can be setted
-freq        = 5.86905                # frequency chosen to study I and Q (GHz)
-file_name   = 'test'   # name of the file where data will be saved
-records     = 100                   # numer of records to store
-channels    = [0,1]                  # list of enabled channels
-sample_rate = 1e7                    # rate of points sampling of PXIe-5170R
-length      = 1000                   # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
+config = {
+    'freq'        : 5.86905,                # frequency chosen to study I and Q (GHz)
+    'file_name'   : 'test' ,                # name of the file where data will be saved
+    'records'     : 100    ,                # numer of records to store
+    'channels'    : [0,1]  ,                # list of enabled channels
+    'sample_rate' : 1e7    ,                # rate of points sampling of PXIe-5170R
+    'length'      : 1000                    # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
+}                
 
-logger.debug("Frequency: " + str(freq))
-logger.debug("Filename: " + file_name)
-logger.debug("Records: " + str(records))
-logger.debug("Channels: " + str(channels))
-logger.debug("Sample rate: " + str(sample_rate))
-logger.debug("Length: " + str(length))
+logger.debug("Frequency: " + str(config['freq']))
+logger.debug("Filename: " + config['file_name'])
+logger.debug("Records: " + str(config['records']))
+logger.debug("Channels: " + str(config['channels']))
+logger.debug("Sample rate: " + str(config['sample_rate']))
+logger.debug("Length: " + str(config['length']))
 
 trigger = dict(
     trigger_type   = 'EDGE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
@@ -72,13 +74,15 @@ for key in trigger:
 '''
 
 I, Q, timestamp = [], [], []
-with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=records, channels=channels, sample_rate=sample_rate, length=length) as daq:
+with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=config['records'], channels=config['channels'], sample_rate=config['sample_rate'], length=config['length']) as daq:
     daq.fetch()
     daq.fill_matrix()
-    daq.storage_hdf5(file_name + '.h5')
-    I, Q, timestamp = daq.get_hdf5(file_name + '.h5')
+    daq.storage_hdf5(config['file_name'] + '.h5')
+    I, Q, timestamp = daq.get_hdf5(config['file_name'] + '.h5')
 
-indexes = np.array(derivative_trigger_matrix(I)) # choose whetrher to use I or Q for the savgol filter and choose parameters
+# apply savgol filter and derivative trigger to align the wfms
+
+indexes = np.array(derivative_trigger_matrix(I)) # choose whether to use I or Q for the savgol filter and choose parameters
 
 # code to align the samples
 # e.g. take the first entry as a reference and move the other
@@ -95,4 +99,9 @@ for i in range(len(I)):
     new_Q.append(Q[i][delta[i]:end[i]])
 
 # Use storage hdf5 from utils to store the new matrices
-storage_hdf5(file_name + '_savgol.h5', 'i_signal', new_I, 'q_signal', new_Q)
+storage_hdf5(config['file_name'] + '_savgol.h5', 'i_signal', new_I, 'q_signal', new_Q)
+
+#save config for data analysis
+import pickle
+with open('config_' + config['file_name'] + '.pkl', 'wb') as f:
+    pickle.dump(config, f)

@@ -3,7 +3,6 @@
 # http://ni-microwavecomponents.com/manuals/5580510-01.pdf
 
 import serial
-import time
 
 class FSWSynt(object):
 
