@@ -144,13 +144,9 @@ class PXIeSignalAcq(object):
 
         return None
 
-    def acq(self): # Need test
-        self.i_matrix.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=0)[0].samples))
-        self.q_matrix.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=0)[0].samples))
-
-        # test this piece of code, if works it avoid us some offline data processing and reduces the amount of data stored
-        # self.q_matrix.extend(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=0)[0].samples).mean())
-        # self.q_matrix.extend(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=0)[0].samples).mean())
+    def acq(self): # use this for frequencies scan, for each frequency takes some points and averages over them
+        self.i_matrix.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=5)[0].samples).mean())
+        self.q_matrix.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=5)[0].samples).mean())
 
         return None
 

@@ -7,7 +7,8 @@ config = {
     'ref'        : 5.87045    ,   #expected frequency for the resonance, central point on x axis (GHz)
     'window'     : 100        ,   #length of half of the interval on x axis
     'step'       : 0.0002     ,   #length of a single step during the frequency sweep (GHz)
-    'file_name'  : 'scan_1GHz'    #name of the file where data will be saved
+    'path'       : 'data/mixer/' ,   #path where data will be saved
+    'file_name'  : 'mix_cal' #name of the file where data will be saved
 }
 
 trigger = dict(
@@ -19,7 +20,7 @@ trigger = dict(
 )
 ##########
 
-daq =  PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=1, channels=[0,1], sample_rate=5e7, length=1000)
+daq =  PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=1, channels=[0,1], sample_rate=1e6, length=1000)
 with FSWSynt("COM12") as synt:
     print(synt.get_ID())
     
@@ -28,14 +29,14 @@ with FSWSynt("COM12") as synt:
         print(synt.set_freq(freq))
         time.sleep(0.005)
         #print(synt.get_freq(freq))
-        print(i)
-        daq.acq()   #DA TESTARE
+        #print(i)
+        daq.acq()   
     
-    daq.storage_hdf5(config['file_name'] + '.h5')
+    daq.storage_hdf5(config['path'] + config['file_name'] + '.h5')
 
 daq.close()
 
 #save config for data analysis
 import pickle
-with open('config_' + config['file_name'] + '.pkl', 'wb') as f:
+with open(config['path'] + 'config_' + config['file_name'] + '.pkl', 'wb') as f:
     pickle.dump(config, f)
