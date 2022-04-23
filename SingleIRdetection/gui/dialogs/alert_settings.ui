@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>640</width>
+    <height>678</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_4">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Sender settings</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0" rowspan="2">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Email: </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="sender_email"/>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="1" rowspan="3">
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4" rowspan="3" colspan="2">
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="6" rowspan="3">
+       <widget class="QLabel" name="status_sender">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(255, 255, 127);</string>
+        </property>
+        <property name="text">
+         <string>waiting</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Server: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QLineEdit" name="sender_server">
+        <property name="maximumSize">
+         <size>
+          <width>126</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>smtp.gmail.com</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5" rowspan="2">
+       <widget class="QPushButton" name="check_status_sender">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Check
+status</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Password: </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="sender_pass">
+          <property name="echoMode">
+           <enum>QLineEdit::Password</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Port: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QSpinBox" name="sender_port">
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="value">
+         <number>465</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Receiver settings</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Emails :
+(line separeted)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QTextEdit" name="receivers_emails"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>Rules</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>List of possible parameters: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QComboBox" name="combo_reading">
+        <item>
+         <property name="text">
+          <string>R0: SET POINT T FOR SORB</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R1: SORB TEMP</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R2: 1 K POT TEMP</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R3: MIX CHAMBER TEMP</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R4: MIX CHAMBER POWER</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R5: STILL POWER</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R6: SORB POWER</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R7: STEPPER V6 TARGET</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R8: STEPPER V12 TARGET</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R9: STEPPER N/V TARGET</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R10: TEMP REGISTER</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R11: CH1 FREQ/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R12: CH2 FREQ/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R13: CH3 FREQ/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R14: A/D I/P GAUGE G1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R15: A/D I/P GAUGE G2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R16: A/D I/P GAUGE G3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R17: A/D I/P 4 (SPARE)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R18: A/D I/P 5 (SPARE)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R19: A/D I/P 6 (SPARE)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R20: A/D I/P PIRANI P1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R21: A/D I/P PIRANI P2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R22: RAW A/D I/P 1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R23: RAW A/D I/P 2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R24: RAW A/D I/P 3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R25: RAW A/D I/P 4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R26: RAW A/D I/P 5</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R27: RAW A/D I/P 6</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R28: RAW A/D I/P 7</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R29: RAW A/D I/P 8</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R30: MIX CHAMBER PROP BAND</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R31: MIX CHAMBER INT ACT TIME</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R32: MIX CHAMBER TEMP</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R33: MIX CHAMBER SET POINT</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R34: MIX CHAMBER SENSOR COND</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>R35: MIX CHAMBER SENSOR RES</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Rules:
+(Boolean logic
+with parentheses,
+newline = AND)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="2">
+       <widget class="QTextEdit" name="rules_text">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>143</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="placeholderText">
+         <string>(R4 &lt; 80) OR (R4 &gt; 90)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="current_rules_status">
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(255, 255, 127);</string>
+        </property>
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;waiting&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <spacer name="verticalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="4" column="0" colspan="3">
+       <widget class="QPushButton" name="set_all_button">
+        <property name="text">
+         <string>Set All</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QPushButton" name="check_current_rules">
+        <property name="text">
+         <string>Check current rules: </string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

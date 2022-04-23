@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="main_path">
+    <file>images/panel.png</file>
+  </qresource>
+</RCC>

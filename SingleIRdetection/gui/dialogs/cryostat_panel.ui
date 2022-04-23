@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>641</width>
+    <height>766</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>641</width>
+    <height>766</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>641</width>
+    <height>766</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">border-image: url(:/main_path/images/panel.png);</string>
+  </property>
+ </widget>
+ <resources>
+  <include location="resource_file.qrc"/>
+ </resources>
+ <connections/>
+</ui>
