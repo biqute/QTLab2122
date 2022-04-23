@@ -13,6 +13,11 @@ This class can easily be overritten since all used function are:
 execute(command) # sends command to ITC503 and returns responce
 get_sens(sensor) # sends the specific command to read sensor number i (R+i). Returns read int
 ```
+Main script for the gui is **itc503_control.py**, so:
+```
+python itc503_control.py
+```
+
 
 ## Funcionalities
 
