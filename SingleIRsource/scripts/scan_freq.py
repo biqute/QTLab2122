@@ -3,30 +3,39 @@ import time
 
 from logging.config import dictConfig
 from logging_config import LOGGING_CONFIG
-from src.FSW_0010 import *
+from src.FSW_0010   import *
 from src.PXIe_5170R import *
+from src.utils      import *
 
 # LOG SYSTEM
 dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 logger.info('START EXECUTION')
 
-# Parameters that can be changed
+########## CONFIG PARAMETERS
+runnumb = 1
+name        = 'scan_wide_off_' + str(runnumb)  # (scan_off, scan_res, scan_out, scan_wide_off, scan_wide_res, scan_wide_out)
+path        = 'data/raw/cal_acq/'
+
 config = {
-    'ref'        : 5.87045       ,   #expected frequency for the resonance, central point on x axis (GHz)
-    'window'     : 100           ,   #length of half of the interval on x axis
-    'step'       : 0.0002        ,   #length of a single step during the frequency sweep (GHz)
-    'path'       : 'data/mixer/' ,   #path where data will be saved
-    'file_name'  : 'mix_cal'         #name of the file where data will be saved
+    'runnumb'    : runnumb         ,
+    'ref'        : 5.87045         ,    # expected frequency for the resonance, central point on x axis (GHz)
+    'window'     : 100             ,    # length of half of the interval on x axis
+    'step'       : 0.0002          ,    # length of a single step during the frequency sweep (GHz)
+    'path'       : path            ,    # path where data will be saved
+    'file_name'  : name                 # name of the file where data will be saved 
 }
 
 trigger = dict(
-    trigger_type   = 'IMMEDIATE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
-    trigger_source = '0',
-    trigger_slope  = 'POSITIVE',  #'POSITIVE' or 'NEGATIVE'
-    trigger_level  = '0.0',
+    trigger_type   = 'IMMEDIATE'   ,    #'EDGE', 'IMMEDIATE' or 'DIGITAL'
+    trigger_source = '0'           ,   
+    trigger_slope  = 'POSITIVE'    ,    #'POSITIVE' or 'NEGATIVE'
+    trigger_level  = '0.0'         ,   
     trigger_delay  = '0.0'
 )
+
+config['trigger'] = trigger
+##########
 
 # Logging all the setting infos
 logger.debug('Expected frequency resonance: '     + str(config['ref']))

@@ -20,15 +20,19 @@ logger.info('START EXECUTION')
 # This solution works well (and always) for the IMMEDIATE, we need to understand the EDGE, maybe we can set a long timeout
 # I on channel 0, Q on channel 1
 
-# Parameters that can be setted
+########## CONFIG PARAMETERS
+name = get_date(file_name = 'acq')
+path = 'data/raw/edge_acq/'
+
 config = {
-    'freq'        : 5.86905,         # frequency chosen to study I and Q (GHz)
-    'file_name'   : 'test' ,         # name of the file where data will be saved
-    'records'     : 100    ,         # numer of records to store
-    'channels'    : [0,1]  ,         # list of enabled channels
-    'sample_rate' : 1e7    ,         # rate of points sampling of PXIe-5170R
-    'length'      : 1000             # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
-}                
+    'freq'        : [5.86905]      ,        # frequency chosen to study I and Q (GHz)
+    'file_name'   : name           ,        # name of the file where data will be saved
+    'records'     : 100            ,        # numer of records to store
+    'channels'    : [0,1]          ,        # list of enabled channels
+    'sample_rate' : 1e7            ,        # rate of points sampling of PXIe-5170R
+    'length'      : 1000           ,        # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
+    'resonators'  : [0]                     # list of resonators used, it's probably a useless variable
+}               
 
 trigger = dict(
     trigger_type   = 'EDGE',         #'EDGE', 'IMMEDIATE' or 'DIGITAL'
@@ -37,6 +41,13 @@ trigger = dict(
     trigger_level  = '0.1',
     trigger_delay  = '0.0'
 )
+
+config['trigger'] = trigger
+config['ADCmax']  =  5
+config['ADCmin']  = -5
+config['ADCnbit'] = 14
+
+###########
 
 # Logging all the setting infos
 logger.debug('Frequency: '         + str(config['freq']))
@@ -52,10 +63,19 @@ for key in trigger:
 # Decide how many points we want based on signal length and sample_rate
 # It seems that length indicates how long it is open, if it is 10k but the trigger goes off after 1000 it takes 9k (..?)
 
-'''with FSWSynt('COM12') as synt:
+'''
+with FSWSynt("COM12") as synt:
     #print(synt.get_ID())
-    synt.set_freq(freq)
+    synt.set_freq(freq[0])
     time.sleep(0.005) #IMPORTANT for real time communication
+    #synt.turn_on()
+    print('The current frequency is: ' + synt.get_freq())    #just to check if the freqency has been set correctly
+
+with FSWSynt("COM7") as synt:
+    #print(synt.get_ID())
+    synt.set_freq(freq[1])
+    time.sleep(0.005) #IMPORTANT for real time communication
+    #synt.turn_on()
     print('The current frequency is: ' + synt.get_freq())    #just to check if the freqency has been set correctly
 '''
 
@@ -65,6 +85,9 @@ with PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=config['records'], chan
     daq.fetch()
     daq.fill_matrix()
     daq.storage_hdf5(config['file_name'] + '.h5')
+
+# CREATE A NEW FILe FOR SAVGOL
+
     I, Q, timestamp = daq.get_hdf5(config['file_name'] + '.h5')
 
 # apply savgol filter and derivative trigger to align the wfms

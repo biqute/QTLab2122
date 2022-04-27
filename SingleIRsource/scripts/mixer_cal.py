@@ -3,38 +3,50 @@ import time
 
 from logging.config import dictConfig
 from logging_config import LOGGING_CONFIG
-from src.FSW_0010 import *
+from src.FSW_0010   import *
 from src.PXIe_5170R import *
+from src.utils      import *
 
 # LOG SYSTEM
 dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 logger.info('START EXECUTION')
 
+# COMMENTS
 # turn on the synt
 # attenuators needed
 # lo from synt1 and rf from synt2
 
-# Parameters that can be setted
+########## CONFIG PARAMETERS
+freq        = 5.869050
+name        = get_date(file_name = 'mix_cal_' + str(int(freq * 1e6)))
+name        = 'mix_cal_' + str(int(freq * 1e6))
+path        = 'data/raw/mix_cal/mixer1/'
+sample_rate = 1e3              
+total_time  = 1
+
 config = {
-    'freq1'       : 5.869050     ,     # frequency chosen to study I and Q (GHz)
-    'freq2'       : 5.869051     ,     # frequency chosen to study I and Q (GHz)
-    'path'        : 'data/mixer/',     # name of the file where data will be saved
-    'file_name'   : 'mix_amp6'   ,     # name of the file where data will be saved
-    'records'     : 1            ,     # numer of records to store
-    'channels'    : [0,1]        ,     # list of enabled channels
-    'sample_rate' : 1e3          ,     # rate of points sampling of PXIe-5170R in Hz
-    'total_time'  : 1            ,     # total acquisition time in seconds
-    'length'      : int(1 * 2e3)       # 'total_time' * 'sample_rate'
+    'freq1'       : freq                             , # frequency chosen to study I and Q (GHz)
+    'freq2'       : freq + 0.000001                  , # frequency chosen to study I and Q (GHz)
+    'path'        : path                             , # name of the file where data will be saved
+    'file_name'   : name                             , # name of the file where data will be saved
+    'records'     : 1                                , # numer of records to store
+    'channels'    : [0,1]                            , # list of enabled channels
+    'sample_rate' : sample_rate                      , # rate of points sampling of PXIe-5170R in Hz
+    'total_time'  : total_time                       , # total acquisition time in seconds
+    'length'      : int(total_time * sample_rate)      # length of the record
 }
 
 trigger = dict(
-    trigger_type   = 'IMMEDIATE',      #'EDGE', 'IMMEDIATE' or 'DIGITAL'
-    trigger_source = '0',
-    trigger_slope  = 'POSITIVE',       #'POSITIVE' or 'NEGATIVE'
-    trigger_level  = '0.0',
+    trigger_type   = 'IMMEDIATE'                     , #'EDGE', 'IMMEDIATE' or 'DIGITAL'
+    trigger_source = '0'                             , # from 0 to 3 in str format
+    trigger_slope  = 'POSITIVE'                      , #'POSITIVE' or 'NEGATIVE'
+    trigger_level  = '0.0'                           , # decided with threshold.py
     trigger_delay  = '0.0'
 )
+
+config['trigger'] = trigger
+###########   
 
 # Logging all the setting infos
 logger.debug('Frequency 1: '         + str(config['freq1']))
@@ -67,7 +79,7 @@ with FSWSynt('COM12') as synt:
     #synt.turn_on()
     logger.debug('The current frequency of the second synthetizer is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
-time.sleep(2)
+time.sleep(1)
 
 with PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=config['records'], channels=config['channels'], sample_rate=config['sample_rate'], length=config['length']) as daq:
     daq.fetch()

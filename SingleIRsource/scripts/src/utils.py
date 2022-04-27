@@ -2,12 +2,20 @@
 
 import h5py
 import logging
+import numpy             as np
 import matplotlib.pyplot as plt
-import numpy as np
-from scipy.signal import savgol_filter
-from scipy.ndimage import convolve
-
+from   datetime          import datetime
+from   scipy.signal      import savgol_filter
+from   scipy.ndimage     import convolve
 logger = logging.getLogger(__name__)
+
+# Get current date and time to have unique file names
+def get_date(file_name = None):
+    now = datetime.now()
+    date= now.strftime("%d%m%y")
+    hour = now.strftime("%H%M%S")
+    name = file_name + '_' + date + '_' + hour
+    return (date, hour) if file_name == None else name
 
 #store data in hdf5 file
 #first pass the file name, then the name of the dataset and the matrix to store. Repeat the last two steps for each matrix
