@@ -1,10 +1,13 @@
 #useful functions for plot, derivatives...
 
 import h5py
-import numpy as np
+import logging
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.signal import savgol_filter
 from scipy.ndimage import convolve
+
+logger = logging.getLogger(__name__)
 
 #store data in hdf5 file
 #first pass the file name, then the name of the dataset and the matrix to store. Repeat the last two steps for each matrix
@@ -13,6 +16,7 @@ def storage_hdf5(file, *args):
         for i in range(0, len(args), 2):  
             hdf.create_dataset(args[i], data=args[i+1], compression='gzip', compression_opts=9)
             #hdf.create_dataset('q_signal', data=q_matrix, compression='gzip', compression_opts=9)
+    logging.debug('Stored data in an HDF5 file: ' + file)
     return None
 
 #returns two matrices, I and Q
@@ -23,6 +27,7 @@ def get_hdf5(name):
         for i in range(len(np.array(hdf['i_signal']))):
             I.append(np.array(hdf['i_signal'])[i])
             Q.append(np.array(hdf['q_signal'])[i])
+    logger.debug("Load the HDF5 file: " + name)
     return I, Q
 
 #use this after the frequncies scan
@@ -40,7 +45,7 @@ def get_mean(name):
 def check_length(I, Q):
     length = len(I) if len(I) <= len(Q) else len(Q)
     if len(I) != len(Q):
-        print('Lengths of I and Q are different! I = %d, Q = %d' %(len(I),len(Q)))
+        logger.debug('Lengths of I and Q are different! I = %d, Q = %d' %(len(I),len(Q)))
     return length
 
 #only to set start and end of the arrays
@@ -88,10 +93,10 @@ def der_IQ(x, I, Q, begin=-1, end=-1, plot = False):
     if plot:
         plt.plot(x[begin:(end-1)], tot)
     if -tot.min() > tot.max():
-        print('Point found during the falling at position %d with a frequency of %.5f.' %(begin + np.argmin(tot), x[begin + np.argmin(tot)])) # For the max in falling
+        logger.debug('Point found during the falling at position %d with a frequency of %.5f.' %(begin + np.argmin(tot), x[begin + np.argmin(tot)])) # For the max in falling
         return begin + np.argmin(tot)
     else:
-        print('Point found during the rising at position %d with a frequency of %.5f.' %(begin + np.argmax(tot), x[begin + np.argmax(tot)])) # For the max in rising
+        logger.debug('Point found during the rising at position %d with a frequency of %.5f.' %(begin + np.argmax(tot), x[begin + np.argmax(tot)])) # For the max in rising
         return begin + np.argmax(tot)
 
 #plot of I, Q, IQ, module from the arrays of I and Q
@@ -168,6 +173,7 @@ def vertex_parabola(x2, y1, y2, y3):
     return -b/(2*a)
 
 def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity=1, vertex=True):
+    logger.debug('Find the critical points where the signal starts in such a way as to align every signal using the Savitzky-Golay filter')
     weights = np.full((1, window_ma), 1/window_ma)
     moving_averages = convolve(sample, weights, mode='mirror')
 
@@ -213,6 +219,7 @@ def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity
     return index_mins
 
 def segmentation_index(sample, window_ma=20, polarity=1, threshold=0):
+    logger.debug('Find the indexes in order to segment the continuous acquisition using also a debouncing')
     weights = np.full(window_ma, 1/window_ma)
     moving_averages = convolve(sample, weights, mode='mirror')
     first_derivative = np.gradient(moving_averages)
@@ -254,6 +261,7 @@ def segmentation_index(sample, window_ma=20, polarity=1, threshold=0):
     return index
 
 def segmentation_iq(i, q, index, ref_pos=0.3, length=10):
+    logger.debug('Segmentation of continuous acquisition for I and Q signals')
     i_matrix = []
     q_matrix = []
 
@@ -270,6 +278,5 @@ def segmentation_iq(i, q, index, ref_pos=0.3, length=10):
         if (k+1 < len(index)) and ((index[k+1]-j) < 50):
             k += 1
         k += 1
-    
 
     return i_matrix, q_matrix

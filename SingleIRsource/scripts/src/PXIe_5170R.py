@@ -9,26 +9,11 @@ import logging
 import niscope as ni
 import numpy as np
 
-from datetime import datetime
 from sys import exit
-
-date = datetime.now().strftime("%m-%d-%Y")
 
 class PXIeSignalAcq(object):
 
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
-
-    file_handler = logging.FileHandler('logs/session_' + date + '.log')
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(logging.DEBUG)
-    logger.addHandler(file_handler)
-
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    console_handler.setLevel(logging.INFO)
-    logger.addHandler(console_handler)
 
     def __init__(self, device_address, trigger: dict, channels=[0,1], records=3, sample_rate=5e7, length=4000, ref_pos=40.0):
         
@@ -64,6 +49,7 @@ class PXIeSignalAcq(object):
         return self
     
     def __exit__(self, *exc):
+        self.logger.debug('Closed session')
         try:
             self.session.close()
         except ni.errors.DriverError as err:
@@ -71,6 +57,7 @@ class PXIeSignalAcq(object):
             exit() 
 
     def close(self):
+        self.logger.debug('Closed session')
         try:
             self.session.close()
         except ni.errors.DriverError as err:
@@ -85,9 +72,10 @@ class PXIeSignalAcq(object):
             exit()
 
         self.get_status()
-        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + ni.Session.acquisition_start_time)
-        self.logger.debug('Actual number of samples acquired in the record: ' + ni.Session.points_done)
-        self.logger.debug('Number of records that have been completely acquired: ' + ni.Session.records_done)
+        # Check if now works or still have problems with ni constants
+        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(ni.Session.acquisition_start_time))
+        self.logger.debug('Actual number of samples acquired in the record: ' + str(ni.Session.points_done))
+        self.logger.debug('Number of records that have been completely acquired: ' + str(ni.Session.records_done))
 
         return None
 
@@ -105,15 +93,16 @@ class PXIeSignalAcq(object):
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
 
-        #self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(ni.Session.acquisition_start_time))
-        #self.logger.debug('Actual number of samples acquired in the record: ' + str(ni.Session.points_done))
-        #self.logger.debug('Number of records that have been completely acquired: ' + str(ni.Session.records_done))
+        # Check if now works or still have problems with ni constants
+        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(ni.Session.acquisition_start_time))
+        self.logger.debug('Actual number of samples acquired in the record: ' + str(ni.Session.points_done))
+        self.logger.debug('Number of records that have been completely acquired: ' + str(ni.Session.records_done))
         
         self.get_status()
 
         return None
 
-    def continuous_acq(self, total_samples, samples_per_fetch): # Need timestamp in the segmentation
+    def continuous_acq(self, total_samples, samples_per_fetch):
         try:
             self.session.initiate()
         except ni.errors.DriverError as err:
@@ -140,11 +129,12 @@ class PXIeSignalAcq(object):
         #self.i_matrix = self.i_matrix[0]
         #self.q_matrix = self.q_matrix[0]
 
-        self.logger.debug("Raw data I and Q were collected for continuous acquisition")
+        self.logger.debug('Raw data I and Q were collected for continuous acquisition')
 
         return None
 
     def acq(self): # use this for frequencies scan, for each frequency takes some points and averages over them
+        self.logger.debug('Scanning frequencies')
         self.i_matrix.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=5)[0].samples).mean())
         self.q_matrix.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=5)[0].samples).mean())
 

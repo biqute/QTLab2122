@@ -1,27 +1,44 @@
-from src.FSW_0010 import *
-from src.PXIe_5170R import *
+import logging
 import time
 
-########## parameters that can be changed
+from logging.config import dictConfig
+from logging_config import LOGGING_CONFIG
+from src.FSW_0010 import *
+from src.PXIe_5170R import *
+
+# LOG SYSTEM
+dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
+logger.info('START EXECUTION')
+
+# Parameters that can be changed
 config = {
-    'ref'        : 5.87045    ,   #expected frequency for the resonance, central point on x axis (GHz)
-    'window'     : 100        ,   #length of half of the interval on x axis
-    'step'       : 0.0002     ,   #length of a single step during the frequency sweep (GHz)
+    'ref'        : 5.87045       ,   #expected frequency for the resonance, central point on x axis (GHz)
+    'window'     : 100           ,   #length of half of the interval on x axis
+    'step'       : 0.0002        ,   #length of a single step during the frequency sweep (GHz)
     'path'       : 'data/mixer/' ,   #path where data will be saved
-    'file_name'  : 'mix_cal' #name of the file where data will be saved
+    'file_name'  : 'mix_cal'         #name of the file where data will be saved
 }
 
 trigger = dict(
     trigger_type   = 'IMMEDIATE', #'EDGE', 'IMMEDIATE' or 'DIGITAL'
     trigger_source = '0',
-    trigger_slope  = 'POSITIVE', #'POSITIVE' or 'NEGATIVE'
+    trigger_slope  = 'POSITIVE',  #'POSITIVE' or 'NEGATIVE'
     trigger_level  = '0.0',
     trigger_delay  = '0.0'
 )
-##########
 
-daq =  PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=1, channels=[0,1], sample_rate=1e6, length=1000)
-with FSWSynt("COM12") as synt:
+# Logging all the setting infos
+logger.debug('Expected frequency resonance: '     + str(config['ref']))
+logger.debug('Window: '                           + str(config['window']))
+logger.debug('Step: '                             + str(config['step']))
+logger.debug('Filename: '                         + config['file_name'])
+
+for key in trigger:
+    logger.debug(str(key) + ': ' + trigger[key])    
+
+daq =  PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=1, channels=[0,1], sample_rate=1e6, length=1000)
+with FSWSynt('COM12') as synt:
     print(synt.get_ID())
     
     for i in range(-config['window'], config['window']):
@@ -36,7 +53,9 @@ with FSWSynt("COM12") as synt:
 
 daq.close()
 
-#save config for data analysis
+# save config for data analysis
 import pickle
 with open(config['path'] + 'config_' + config['file_name'] + '.pkl', 'wb') as f:
     pickle.dump(config, f)
+logger.debug('Saved config for data analysis: config_' + config['file_name'] + '.pkl')
+logger.info('END EXECUTION\n\n')

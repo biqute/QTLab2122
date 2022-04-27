@@ -2,16 +2,19 @@
 # https://pyserial.readthedocs.io/en/latest/pyserial_api.html
 # http://ni-microwavecomponents.com/manuals/5580510-01.pdf
 
+import logging
 import serial
 
 class FSWSynt(object):
 
+    logger = logging.getLogger(__name__) # Understand what can be useful to log for the synthesizer because we have return in each functions
+
     def __init__(self, device_address):
         try:
             self.device = serial.Serial(device_address, baudrate=115200, timeout=1.5, stopbits=1, parity='N')       #stopbits
-            print('Connected to FSWSynt :)')
+            self.logger.debug('Connected to FSWSynt')
         except:
-            print('Not connected to FSWSynt :(')
+            self.logger.debug('Not connected to FSWSynt')
 
     def write(self, msg):
         self.device.write(bytes(msg))

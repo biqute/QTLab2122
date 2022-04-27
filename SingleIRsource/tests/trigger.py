@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from random import randint, uniform # Unused (?)
 from scipy.signal import savgol_filter
 from scipy.ndimage import convolve
-from random import randint, uniform
 
 #to generate waveform with the shape of a double exponential, eventually adding noise to it
 def gen_signal(x=np.linspace(0,1000,1000), baseline=0, amplitude=140, rise_time=40, decay_time=60, pulse_start=200, noise_lev=0.5, plot=False):
