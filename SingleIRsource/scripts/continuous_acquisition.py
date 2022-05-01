@@ -1,12 +1,13 @@
 #https://nimi-python.readthedocs.io/en/master/niscope/examples.html#niscope-fetch-forever-py
 
 import logging
+import json
 
 from logging.config import dictConfig
 from logging_config import LOGGING_CONFIG
-from src.FSW_0010 import *
+from src.FSW_0010   import *
 from src.PXIe_5170R import *
-from src.utils import *
+from src.utils      import *
 
 # LOG SYSTEM
 dictConfig(LOGGING_CONFIG)
@@ -43,13 +44,12 @@ config['trigger'] = trigger
 
 # Logging all the setting infos
 logger.debug('Frequency: '         + str(config['freq']))
-logger.debug('Filename: '          + config['file_name'])
+logger.debug('Filename: '          + str(config['file_name']))
 logger.debug('Records: '           + str(config['records']))
 logger.debug('Channels: '          + str(config['channels']))
 logger.debug('Sample rate: '       + str(config['sample_rate']))
-logger.debug('Length: '            + str(config['length']))
-logger.debug('Total time: '          + str(total_acq_time))
-logger.debug('Total samples: '       + str(config['total_samples']))
+logger.debug('Total samples: '     + str(config['total_samples']))
+logger.debug('Total time: '        + str(total_acq_time))
 
 for key in trigger:
     logger.debug(str(key) + ': ' + trigger[key]) 
@@ -72,20 +72,15 @@ with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=config['records'], chan
     daq.continuous_acq(config['total_samples'], config['samples_per_fetch'])
     daq.storage_hdf5(path + config['file_name'] + '.h5')
 
-# NEW FILE
-i_r, q_r = get_hdf5(path + config['file_name'] + '.h5')
-index = segmentation_index(i_r[0], threshold=0.01)
-i_matrix, q_matrix = segmentation_iq(i_r[0], q_r[0], index)
-
-# Try to understand how to remove the [0] on i_r and q_r
-# These methods show how to segmentate a continuous acquisition
-# Remember to apply this before sav_gol and set the right threshold, length and ref_pos
-# After you made the sav_gol you can correct I and Q and save them in a watson file
-
+"""with h5py.File(path + config['file_name'] + '.h5', 'w') as hdf:
+    hdf.create_dataset('i_signal_ch0', data=np.random.rand(config['total_samples'])*10, compression='gzip', compression_opts=9)
+    hdf.create_dataset('q_signal_ch0', data=np.random.rand(config['total_samples'])*8, compression='gzip', compression_opts=9)
+    hdf.create_dataset('i_signal_ch1', data=np.random.rand(config['total_samples'])*10, compression='gzip', compression_opts=9)
+    hdf.create_dataset('q_signal_ch1', data=np.random.rand(config['total_samples'])*8, compression='gzip', compression_opts=9)"""
 
 #save config for data analysis
-import pickle
-with open(path + 'config_' + config['file_name'] + '.pkl', 'wb') as f:
-    pickle.dump(config, f)
+cfg = json.dumps(config)
+with open(path + 'config_' + config['file_name'] + '.json','w') as f:
+    f.write(cfg)
 
 logger.info('END EXECUTION\n\n')

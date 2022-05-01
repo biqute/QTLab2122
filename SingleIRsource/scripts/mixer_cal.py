@@ -1,5 +1,6 @@
 import logging
 import time
+import json
 
 from logging.config import dictConfig
 from logging_config import LOGGING_CONFIG
@@ -51,7 +52,7 @@ config['trigger'] = trigger
 # Logging all the setting infos
 logger.debug('Frequency 1: '         + str(config['freq1']))
 logger.debug('Frequency 2: '         + str(config['freq2']))
-logger.debug('Filename: '            + config['file_name'])
+logger.debug('Filename: '            + str(config['file_name']))
 logger.debug('Records: '             + str(config['records']))
 logger.debug('Channels: '            + str(config['channels']))
 logger.debug('Sample rate: '         + str(config['sample_rate']))
@@ -86,9 +87,14 @@ with PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=config['records'], chan
     daq.fill_matrix()
     daq.storage_hdf5(config['path'] + config['file_name'] + '.h5')
 
+with h5py.File(path + config['file_name'] + '.h5', 'w') as hdf:
+    hdf.create_dataset('i_signal_ch0', data=np.random.rand(config['length'])*10, compression='gzip', compression_opts=9)
+    hdf.create_dataset('q_signal_ch0', data=np.random.rand(config['length'])*8, compression='gzip', compression_opts=9)
+
 # save config for data analysis
-import pickle
-with open(config['path'] + 'config_' + config['file_name'] + '.pkl', 'wb') as f:
-    pickle.dump(config, f)
-logger.debug('Saved config for data analysis: config_' + config['file_name'] + '.pkl')
+cfg = json.dumps(config)
+with open(config['path'] + 'config_' + config['file_name'] + '.json', 'w') as f:
+    f.write(cfg)
+    
+logger.debug('Saved config for data analysis: config_' + config['file_name'] + '.json')
 logger.info('END EXECUTION\n\n')

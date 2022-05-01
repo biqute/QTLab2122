@@ -1,11 +1,12 @@
 import logging
+import json
 import sys
 
 from logging.config import dictConfig
 from logging_config import LOGGING_CONFIG
-from src.FSW_0010 import *
+from src.FSW_0010   import *
 from src.PXIe_5170R import *
-from src.utils import *
+from src.utils      import *
 
 # LOG SYSTEM
 dictConfig(LOGGING_CONFIG)
@@ -51,7 +52,7 @@ config['ADCnbit'] = 14
 
 # Logging all the setting infos
 logger.debug('Frequency: '         + str(config['freq']))
-logger.debug('Filename: '          + config['file_name'])
+logger.debug('Filename: '          + str(config['file_name']))
 logger.debug('Records: '           + str(config['records']))
 logger.debug('Channels: '          + str(config['channels']))
 logger.debug('Sample rate: '       + str(config['sample_rate']))
@@ -79,41 +80,24 @@ with FSWSynt("COM7") as synt:
     print('The current frequency is: ' + synt.get_freq())    #just to check if the freqency has been set correctly
 '''
 
-I, Q, timestamp = [], [], []
-
 with PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=config['records'], channels=config['channels'], sample_rate=config['sample_rate'], length=config['length']) as daq:
     daq.fetch()
     daq.fill_matrix()
-    daq.storage_hdf5(config['file_name'] + '.h5')
+    daq.storage_hdf5(path + config['file_name'] + '.h5')
 
-# CREATE A NEW FILe FOR SAVGOL
+"""with h5py.File(path + config['file_name'] + '.h5', 'w') as hdf:
+    hdf.create_dataset('i_signal_ch0', data=np.random.rand(100,1000)*10, compression='gzip', compression_opts=9)
+    hdf.create_dataset('q_signal_ch0', data=np.random.rand(100,1000)*10, compression='gzip', compression_opts=9)
+    hdf.create_dataset('timestamp_ch0', data=np.random.rand(1000), compression='gzip', compression_opts=9)
+    hdf.create_dataset('i_signal_ch1', data=np.random.rand(100,1000)*10, compression='gzip', compression_opts=9)
+    hdf.create_dataset('q_signal_ch1', data=np.random.rand(100,1000)*10, compression='gzip', compression_opts=9)
+    hdf.create_dataset('timestamp_ch1', data=np.random.rand(1000), compression='gzip', compression_opts=9)"""
 
-    I, Q, timestamp = daq.get_hdf5(config['file_name'] + '.h5')
-
-# apply savgol filter and derivative trigger to align the wfms
-indexes = np.array(derivative_trigger_matrix(I)) # choose whether to use I or Q for the savgol filter and choose parameters
-
-# code to align the samples
-# e.g. take the first entry as a reference and move the other
-delta = (indexes - indexes.min()).astype(int)
-end = (indexes - indexes.max() - 1).astype(int)
-
-# at the end it's necessary to cut the samples to have them all of the same length
-# - 1 in end needed to avoid Q[i][sth:0] that happened when indexes=indexes.max()
-# and returned an empty array
-new_I, new_Q = [], []
-
-for i in range(len(I)):
-    new_I.append(I[i][delta[i]:end[i]])
-    new_Q.append(Q[i][delta[i]:end[i]])
-
-# use storage hdf5 from utils to store the new matrices
-storage_hdf5(config['file_name'] + '_savgol.h5', 'i_signal', new_I, 'q_signal', new_Q)
 
 # save config for data analysis
-import pickle
-with open('config_' + config['file_name'] + '.pkl', 'wb') as f:
-    pickle.dump(config, f)
+cfg = json.dumps(config)
+with open(path + 'config_' + config['file_name'] + '.json', 'w') as f:
+    f.write(cfg)
 
-logger.debug('Saved config for data analysis: config_' + config['file_name'] + '.pkl')
+logger.debug('Saved config for data analysis: config_' + config['file_name'] + '.json')
 logger.info('END EXECUTION\n\n')

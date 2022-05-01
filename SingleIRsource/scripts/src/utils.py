@@ -38,6 +38,18 @@ def get_hdf5(name):
     logger.debug("Load the HDF5 file: " + name)
     return I, Q
 
+#returns two matrices, I and Q and their timestamps
+#useful for acquisition, where many records are acquired
+def get_hdf5_time(name): 
+    with h5py.File(name, 'r') as hdf:
+        I, Q, t = [], []
+        for i in range(len(np.array(hdf['i_signal']))):
+            I.append(np.array(hdf['i_signal'])[i])
+            Q.append(np.array(hdf['q_signal'])[i])
+        t = np.array(hdf['timestamp'])
+    logger.debug("Load the HDF5 file with timestamp: " + name)
+    return I, Q, t
+
 #use this after the frequncies scan
 #for each frequencies n points are taken, this function returns the points mean 
 def get_mean(name):

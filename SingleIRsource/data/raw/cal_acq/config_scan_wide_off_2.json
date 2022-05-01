@@ -1,0 +1,1 @@
+{"runnumb": 2, "ref": [5.87, 5.899], "window": 2500, "step": 0.0002, "path": "data/raw/cal_acq/", "file_name": "scan_wide_off_2", "trigger": {"trigger_type": "IMMEDIATE", "trigger_source": "0", "trigger_slope": "POSITIVE", "trigger_level": "0.0", "trigger_delay": "0.0"}}

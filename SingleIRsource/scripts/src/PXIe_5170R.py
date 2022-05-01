@@ -140,6 +140,13 @@ class PXIeSignalAcq(object):
 
         return None
 
+    def acq2(self): # use this for frequencies scan, for each frequency takes some points and averages over them
+        self.logger.debug('Scanning frequencies')
+        self.i_matrix.append(np.array(self.session.channels[self.channels[2]].read(num_samples=self.length, timeout=5)[0].samples).mean())
+        self.q_matrix.append(np.array(self.session.channels[self.channels[3]].read(num_samples=self.length, timeout=5)[0].samples).mean())
+
+        return None
+
     def fill_matrix(self, iter=0, return_data=False):
         iter = self.records if iter == 0 else iter
         
