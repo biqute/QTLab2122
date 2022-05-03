@@ -4,10 +4,10 @@ from datetime import datetime
 from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtWidgets import QStyleFactory
 
-from dialogs.dialog_send_command import Ui_Dialog as dialog_send_command
-from dialogs.dialog_cryostat_panel import Ui_Dialog as dialog_cryostat_panel
-from dialogs.dialog_alert_rules import Ui_Dialog as dialog_alert_rules
-from dialogs.dialog_live_graphs import Ui_Dialog as dialog_live_graphs
+from dialog_send_command import Ui_Dialog as dialog_send_command
+from dialog_cryostat_panel import Ui_Dialog as dialog_cryostat_panel
+from dialog_alert_rules import Ui_Dialog as dialog_alert_rules
+from dialog_live_graphs import Ui_Dialog as dialog_live_graphs
 
 from instruments import Fridge_handler
 
@@ -24,6 +24,8 @@ class Ui(QtWidgets.QMainWindow):
         self.is_dialog_graphs_open = False
         self.alert_dict = None
 
+        self.dialog_panel = None
+
         super(Ui, self).__init__()
         uic.loadUi('itc503_control.ui', self)
 
@@ -31,12 +33,8 @@ class Ui(QtWidgets.QMainWindow):
         self.spinsetTemp.editingFinished.connect(self.set_temp)
         self.send_other_commands.clicked.connect(self.open_send_commands)
         self.combosetAutocontrol.currentIndexChanged.connect(self.set_autocontrol)
-        self.spinsetGasOutput.editingFinished.connect(self.set_gas_output)
-        self.combosetHeatersens.currentIndexChanged.connect(self.set_heater_sensor)
-        self.spinsetHeaterPercent.editingFinished.connect(self.set_heater_output)
         self.spinsetProportionalID.editingFinished.connect(self.set_proportional)
         self.spinsetPIntegrationD.editingFinished.connect(self.set_integration)
-        self.spinsetPIDerivative.editingFinished.connect(self.set_derivative)
         self.spin_threadinterval.editingFinished.connect(self.set_general_delta_time)
 
         # connect noncritical settings
@@ -56,7 +54,7 @@ class Ui(QtWidgets.QMainWindow):
         self.show()
 
     def wait_and_update(self):
-        sec1 = self.spin_threadinterval.value()
+        sec1 = int(self.spin_threadinterval.value())
         self.timer1 = QtCore.QTimer()
         self.timer1.stop()
         self.timer1.setInterval(1000*sec1)
@@ -71,22 +69,101 @@ class Ui(QtWidgets.QMainWindow):
         self.timer2.timeout.connect(self.do_the_log)
         self.timer2.start()
 
+    def update_status(self):
+        reading = self.fridge.execute('X')
+        print('reading status: ', reading)
+        if len(reading) != 21:
+            return
+
+        self.groupBox_status.setTitle('Current Status: ' + reading)
+
+        x = reading[1]
+        a = reading[3]
+        c = reading[5]
+        pppp = reading[7:15]
+        s = reading[16]
+        o = reading[18]
+        e = reading[20]
+
+        if a == '0':
+            self.status_mixer_activity.setText('OFF')
+        elif a == '1':
+            self.status_mixer_activity.setText('ON')
+
+        if c == '0':
+            self.status_control.setText('Local&Locked')
+        elif c == '1':
+            self.status_control.setText('Remote&Locked')
+        elif c == '2':
+            self.status_control.setText('Local&Unlocked')
+        elif c == '3':
+            self.status_control.setText('Remote&Unlocked')
+
+        self.status_solenoid_pumps.setText(pppp)
+        self.status_motorized_valves.setText(s)
+        self.status_initializing.setText(x)
+
+        if o == '0':
+            self.status_still_sorb.setText('Both OFF')
+        elif o == '1':
+            self.status_still_sorb.setText('Still ON, Sorb OFF')
+        elif o == '2':
+            self.status_still_sorb.setText('Still OFF, Sorb ON (T)')
+        elif o == '3':
+            self.status_still_sorb.setText('Still ON, Sorb ON (T)')
+        elif o == '4':
+            self.status_still_sorb.setText('Still OFF, Sorb ON (P)')
+        elif o == '5':
+            self.status_still_sorb.setText('Still ON, Sorb ON (P)')
+
+        if e == '0':
+            self.status_mix_power.setText('OFF')
+        elif e == '1':
+            self.status_mix_power.setText('2 uW')
+        elif e == '2':
+            self.status_mix_power.setText('20 uW')
+        elif e == '3':
+            self.status_mix_power.setText('200 uW')
+        elif e == '4':
+            self.status_mix_power.setText('2 mW')
+        elif e == '5':
+            self.status_mix_power.setText('20 mW')
+
     def update_all_readings(self):
+        self.update_status()
         self.lcdTemp_set.display(self.fridge.get_sens(0))
         self.lcdTemp_sens1_K.display(self.fridge.get_sens(1))
         self.lcdTemp_sens2_K.display(self.fridge.get_sens(2))
         self.lcdTemp_sens3_K.display(self.fridge.get_sens(3))
-        self.lcdTemp_err.display(self.lcdTemp_sens1_K.value() - self.lcdTemp_set.value())
+        self.lcdTemp_err.display(self.lcdTemp_sens1_K.value()
+                                 - self.lcdTemp_set.value())
         self.lcd_mix_power.display(self.fridge.get_sens(4))
         self.lcd_still_power.display(self.fridge.get_sens(5))
         self.lcd_sorb_power.display(self.fridge.get_sens(6))
-        self.lcd_gauge1.display(self.fridge.get_sens(14))
-        self.lcd_gauge2.display(self.fridge.get_sens(15))
         self.lcdProportionalID.display(self.fridge.get_sens(30))
         self.lcdPIntegrationD.display(self.fridge.get_sens(31))
 
+        gauge1 = self.fridge.get_sens(14)
+        gauge2 = self.fridge.get_sens(15)
+
+        if self.dialog_panel is not None:
+            gauge3 = self.fridge.get_sens(16)
+            pirani1 = self.fridge.get_sens(20)
+            pirani2 = self.fridge.get_sens(21)
+
+            self.dialog_panel.ui.lcd_g1.display(gauge1)
+            self.dialog_panel.ui.lcd_g2.display(gauge2)
+            self.dialog_panel.ui.lcd_g3.display(gauge3)
+
+            self.dialog_panel.ui.lcd_p1.display(pirani1)
+            self.dialog_panel.ui.lcd_p2.display(pirani2)
+
         if self.alert_enabled:
-            self.do_the_alert()
+            try:
+                self.do_the_alert()
+            except Exception as e:
+                print('\nAlert Error\n')
+                print(e)
 
     def set_temp(self):
         print('set temp')
@@ -102,23 +179,17 @@ class Ui(QtWidgets.QMainWindow):
         _ = self.fridge.execute(command)
         print('set_autocontrol')
 
-    def set_gas_output(self):
-        print('set_gas_output')
-
-    def set_heater_sensor(self):
-        print('set_heater_sensor')
-
-    def set_heater_output(self):
-        print('set_heater_output')
-
     def set_proportional(self):
         print('set_proportional')
+        value = self.spinsetProportionalID.value()
+        command = 'p'+str(int(value))
+        _ = self.fridge.execute(command)
 
     def set_integration(self):
         print('set_integration')
-
-    def set_derivative(self):
-        print('set_derivative')
+        value = self.spinsetPIntegrationD.value()
+        command = 'i'+str(int(value))
+        _ = self.fridge.execute(command)
 
     def set_general_delta_time(self):
         print('set_general_delta_time')
@@ -128,7 +199,7 @@ class Ui(QtWidgets.QMainWindow):
 
     def set_logging_status(self, value):
         print('set logging status')
-        if value is 0:
+        if value == 0:
             self.logging_enabled = False
         else:
             self.logging_enabled = True
@@ -141,7 +212,7 @@ class Ui(QtWidgets.QMainWindow):
 
     def set_alert_status(self, value):
         print('set_alert_status')
-        if value is 0:
+        if value == 0:
             self.alert_enabled = False
         else:
             self.alert_enabled = True
@@ -179,29 +250,29 @@ class Ui(QtWidgets.QMainWindow):
             return
 
         now = datetime.now()
-        
+
         try:
-            #not using fstring for better compatibility, in this way we can run on Python < 3.6
             f = open(self.log_path.text(), 'a')
             log_string = str(now.strftime("%d/%m/%Y %H:%M")) + ':'
             for i in range(35):
-                log_string += '\n\tR{i}: {get_sensor}'.format(i=i,
-                                                              get_sensor=self.fridge.get_sens(i))
+                log_string += '\n\tR{i}: {get_sensor}'.format(
+                    i=i, get_sensor=self.fridge.get_sens(i))
             log_string += '\n'
             f.write(log_string)
             f.close()
-        except:
-            print('problemi nella path!')
+        except Exception as e:
+            print('\nLog problem!\n')
+            print(e)
 
     def do_the_alert(self):
         print('do_the_alert')
         if self.check_alert_enable.isChecked() is False:
             return
         elif self.my_rule_obj is None:
+            print('No rule set')
             return
         else:
             self.my_rule_obj.compute_rules()
-
 
 
 app = QtWidgets.QApplication(sys.argv)  # Create QApplication
