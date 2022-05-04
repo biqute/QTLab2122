@@ -2,6 +2,7 @@
 
 import logging
 import json
+import time
 
 from logging.config import dictConfig
 from logging_config import LOGGING_CONFIG
@@ -21,7 +22,7 @@ name                = get_date(file_name = 'cont_acq')
 path                = 'data/raw/cont_acq/'
 
 config = {
-'freq'              : [5.86905]                           ,  # frequency chosen to study I and Q (GHz)
+'freq'              : [5.86905, 5.86905]                  ,  # frequency chosen to study I and Q (GHz)
 'file_name'         : name                                ,  # name of the file where data will be saved
 'records'           : 1                                   ,  # numer of records to store
 'channels'          : [0,1]                               ,  # list of enabled channels
@@ -54,19 +55,19 @@ logger.debug('Total time: '        + str(total_acq_time))
 for key in trigger:
     logger.debug(str(key) + ': ' + trigger[key]) 
 
-'''with FSWSynt("COM12") as synt:
+with FSWSynt("COM12") as synt:
     #print(synt.get_ID())
-    synt.set_freq(freq[0])
+    synt.set_freq(config['freq'][0])
     time.sleep(0.005) #IMPORTANT for real time communication
-    print('The current frequency is: ' + synt.get_freq(freq))
+    print('The current frequency is: ' + str(synt.get_freq()))
 
 with FSWSynt("COM7") as synt:
     #print(synt.get_ID())
-    synt.set_freq(freq[1])
+    synt.set_freq(config['freq'][1])
     time.sleep(0.005) #IMPORTANT for real time communication
     #synt.turn_on()
-    print('The current frequency is: ' + synt.get_freq())    #just to check if the freqency has been set correctly
-'''
+    print('The current frequency is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
+
 
 with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=config['records'], channels=config['channels'], sample_rate=sample_rate, length=1, ref_pos=0.0) as daq:
     daq.continuous_acq(config['total_samples'], config['samples_per_fetch'])

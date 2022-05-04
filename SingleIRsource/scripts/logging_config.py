@@ -22,7 +22,7 @@ LOGGING_CONFIG = {
             'formatter': 'standard',
             'class': 'logging.FileHandler',
             'filename': 'logs/session_' + date + '.log',
-            'mode': 'w',
+            'mode': 'a',
             'encoding': 'utf-8'
         }
     },

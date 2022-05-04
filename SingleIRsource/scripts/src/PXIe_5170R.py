@@ -88,15 +88,18 @@ class PXIeSignalAcq(object):
 
         self.get_status()
 
+        #self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=5, relative_to=ni.FetchRelativeTo.PRETRIGGER, num_records=self.records) for i in self.channels])
         try:
-            self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=10, relative_to=ni.FetchRelativeTo.PRETRIGGER) for i in self.channels])
+            self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=5, relative_to=ni.FetchRelativeTo.PRETRIGGER, num_records=self.records) for i in self.channels])
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
+            print('no')
+            #it doesn't print anything
 
-        # Check if now works or still have problems with ni constants
-        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(ni.Session.acquisition_start_time))
-        self.logger.debug('Actual number of samples acquired in the record: ' + str(ni.Session.points_done))
-        self.logger.debug('Number of records that have been completely acquired: ' + str(ni.Session.records_done))
+        # Check if now works or still have problems with ni constants -> now it works
+        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(self.session.acquisition_start_time))
+        self.logger.debug('Actual number of samples acquired in the record: ' + str(self.session.points_done))
+        self.logger.debug('Number of records that have been completely acquired: ' + str(self.session.records_done))
         
         self.get_status()
 
@@ -147,10 +150,8 @@ class PXIeSignalAcq(object):
 
         return None
 
-    def fill_matrix(self, iter=0, return_data=False):
-        iter = self.records if iter == 0 else iter
-        
-        for i in range(iter):
+    def fill_matrix(self, return_data=False):
+        for i in range(self.records):
             self.i_matrix.append(np.array(self.waveform[0][i].samples))
             self.q_matrix.append(np.array(self.waveform[1][i].samples))
             self.timestamp.append(self.waveform[0][i].absolute_initial_x)

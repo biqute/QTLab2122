@@ -1,0 +1,1 @@
+{"freq1": 5.345679, "freq2": 5.34568, "power": "20dB on 1, 10+20dB on2 ", "path": "data/raw/mix_cal/mixer1/", "file_name": "mix_cal_10", "records": 1, "channels": [0, 1], "sample_rate": 1000.0, "total_time": 1, "length": 1000, "trigger": {"trigger_type": "IMMEDIATE", "trigger_source": "0", "trigger_slope": "POSITIVE", "trigger_level": "0.0", "trigger_delay": "0.0"}}

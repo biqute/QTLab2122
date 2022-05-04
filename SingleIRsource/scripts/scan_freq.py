@@ -21,7 +21,7 @@ path        = 'data/raw/cal_acq/'
 config = {
     'runnumb'    : runnumb         ,
     'ref'        : [5.870, 5.899]  ,    # expected frequency for the resonance, central point on x axis (GHz)
-    'window'     : 2500            ,    # length of half of the interval on x axis
+    'window'     : 100             ,    # length of half of the interval on x axis
     'step'       : 0.0002          ,    # length of a single step during the frequency sweep (GHz)
     'path'       : path            ,    # path where data will be saved
     'file_name'  : name                 # name of the file where data will be saved 
@@ -58,7 +58,8 @@ with FSWSynt('COM12') as synt:
         #print(synt.get_freq(freq))
         #print(i)
         daq.acq()   
-    
+
+#da commentare
 with FSWSynt('COM7') as synt:
     print(synt.get_ID())
     
