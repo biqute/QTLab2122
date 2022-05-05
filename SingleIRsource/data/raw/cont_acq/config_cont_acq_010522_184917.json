@@ -1,1 +1,0 @@
-{"freq": [5.86905], "file_name": "cont_acq_010522_184917", "records": 1, "channels": [0, 1], "sample_rate": 1000000.0, "total_acq_time": 0.1, "total_samples": 100000, "samples_per_fetch": 1000, "resonators": [0], "trigger": {"trigger_type": "CONTINUOS"}}

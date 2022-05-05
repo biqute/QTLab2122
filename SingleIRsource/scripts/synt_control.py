@@ -24,4 +24,6 @@ with FSWSynt(device_address) as test:
         print(test.set_freq(freq))
         time.sleep(0.2)
         print('The frequency is: %d' %test.get_freq())
-            
+        test.set_power(10)
+        time.sleep(0.2)
+        print('The power is: %d' %test.get_power())
