@@ -23,24 +23,24 @@ logger.info('START EXECUTION')
 # I on channel 0, Q on channel 1
 
 ########## CONFIG PARAMETERS
-name = get_date(file_name = 'acq')
+name = get_date(file_name = 'noise')
 path = 'data/raw/edge_acq/'
 
 config = {
-    'freq'        : [5.86905, 5.869051]      ,        # frequency chosen to study I and Q (GHz)
+    'freq'        : [5.63124, 5.86436]      ,        # frequency chosen to study I and Q (GHz)
     'file_name'   : name           ,        # name of the file where data will be saved
-    'records'     : 10            ,        # numer of records to store
-    'channels'    : [0,1]          ,        # list of enabled channels
-    'sample_rate' : 1e6            ,        # rate of points sampling of PXIe-5170R
-    'length'      : 100           ,        # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
-    'resonators'  : [0]                     # list of resonators used, it's probably a useless variable
+    'records'     : 1000            ,        # numer of records to store
+    'channels'    : [0,1,2,3]          ,        # list of enabled channels
+    'sample_rate' : 1e8            ,        # rate of points sampling of PXIe-5170R
+    'length'      : 2000           ,        # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
+    'resonators'  : [0,1]                     # list of resonators used, it's probably a useless variable
 }               
 
 trigger = dict(
     trigger_type   = 'IMMEDIATE',         #'EDGE', 'IMMEDIATE' or 'DIGITAL'
-    trigger_source = '0',
-    trigger_slope  = 'POSITIVE',     #'POSITIVE' or 'NEGATIVE'
-    trigger_level  = '0.1',
+    trigger_source = '1',
+    trigger_slope  = 'NEGATIVE',     #'POSITIVE' or 'NEGATIVE'
+    trigger_level  = '-0.061',
     trigger_delay  = '0.0'
 )
 

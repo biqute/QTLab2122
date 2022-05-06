@@ -14,17 +14,19 @@ logger = logging.getLogger(__name__)
 logger.info('START EXECUTION')
 
 ########## CONFIG PARAMETERS
-runnumb = 1
-name        = 'scan_off_' + str(runnumb)  # (scan_off_, scan_res_, scan_wide_off_, scan_wide_res_)
+runnumb = 47
+name        = 'scan_wide_off_res_' + str(runnumb)  # (scan_off_, scan_res_, scan_wide_off_, scan_wide_res_)
 path        = 'data/raw/cal_acq/'
 
 config = {
-    'runnumb'    : runnumb         ,
-    'ref'        : [5.870, 5.899]  ,    # expected frequency for the resonance, central point on x axis (GHz)
-    'window'     : 100             ,    # length of half of the interval on x axis
-    'step'       : 0.0002          ,    # length of a single step during the frequency sweep (GHz)
-    'path'       : path            ,    # path where data will be saved
-    'file_name'  : name                 # name of the file where data will be saved 
+    'runnumb'    : runnumb             ,
+    'ref'        : [5.63134, 5.86446]  ,    # expected frequency for the resonance, central point on x axis (GHz) 5.8627 - 5.6305 - 5.63134 - 5.86446
+    'window'     : 1000                ,    # length of half of the interval on x axis, 1000 wide, 250 non wide
+    'step'       : 0.00002             ,    # length of a single step during the frequency sweep (GHz)
+    'path'       : path                ,    # path where data will be saved
+    'file_name'  : name                ,     # name of the file where data will be saved 
+    'att_manop'  : '25dB'              ,
+    'channels'   : [0,1,2,3]
 }
 
 trigger = dict(
@@ -47,34 +49,37 @@ logger.debug('Filename: '                     + str(config['file_name']))
 for key in trigger:
     logger.debug(str(key) + ': ' + trigger[key])    
 
-daq =  PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=1, channels=[0,1], sample_rate=1e6, length=1000)
-with FSWSynt('COM12') as synt:
+daq =  PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=1, channels=config['channels'], sample_rate=1e6, length=1000)
+with FSWSynt('COM12') as synt, FSWSynt('COM7') as synt2: 
     print(synt.get_ID())
-    
+    print(synt2.get_ID()) 
+
     for i in range(-config['window'], config['window']):
         freq = config['ref'][0] + i*config['step']
+        freq2 = config['ref'][1] + i*config['step'] 
+        #synt.set_freq(freq)
         print(synt.set_freq(freq))
+        synt2.set_freq(freq2)
         time.sleep(0.005)
-        #print(synt.get_freq(freq))
         #print(i)
         daq.acq()   
+        time.sleep(0.005)
 
 #da commentare
-with FSWSynt('COM7') as synt:
-    print(synt.get_ID())
+
     
+"""    
     for i in range(-config['window'], config['window']):
         freq = config['ref'][1] + i*config['step']
         print(synt.set_freq(freq))
         time.sleep(0.005)
         #print(synt.get_freq(freq))
         #print(i)
-        daq.acq2() 
+        daq.acq2() """
 
-    daq.storage_hdf5(config['path'] + config['file_name'] + '.h5')
-
+daq.storage_hdf5(config['path'] + config['file_name'] + '.h5')
 daq.close()
-
+print(':)')
 """
 with h5py.File(path + config['file_name'] + '.h5', 'w') as hdf:
     hdf.create_dataset('i_signal_ch0', data=np.random.rand(config['window']*2), compression='gzip', compression_opts=9)

@@ -20,9 +20,9 @@ logger.info('START EXECUTION')
 
 ########## CONFIG PARAMETERS
 freq        = 5.345679 #5.345679 #5.380116 #5.638565 #5.869609 #max 6 decimals 
-power       = 0
+power       = '20+10 on 1, 20 on 2'
 #name       = get_date(file_name = 'mix_cal_' + str(int(freq * 1e6)))
-name        = 'mix_cal_' +str(power)#+ str(int(freq * 1e6))
+name        = 'mix_cal_test_' + str(int(freq * 1e6))
 path        = 'data/raw/mix_cal/mixer1/'
 sample_rate = 1e3              
 total_time  = 1
@@ -30,7 +30,7 @@ total_time  = 1
 config = {
     'freq1'       : freq                             , # frequency chosen for the mixer calibration (GHz)
     'freq2'       : freq + 0.000001                  , # frequency 1KHz apart from the previous one (GHz)
-    'power'       : '20dB on 1, 10+20dB on2 '        , # attenuation of the synthetizer
+    'power'       : power                            , # attenuation of the synthetizer
     'path'        : path                             , # name of the file where data will be saved
     'file_name'   : name                             , # name of the file where data will be saved
     'records'     : 1                                , # numer of records to store
@@ -75,6 +75,9 @@ with FSWSynt('COM7') as synt:
     #synt.turn_on()
     time.sleep(0.01)
     print('The current frequency is: ' + str(synt.get_freq()))
+    #synt.set_power(power)
+    #time.sleep(0.01)
+    print('The power is: ' + str(synt.get_power()))
     logger.debug('The current frequency of the first synthetizer is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 with FSWSynt('COM12') as synt:
@@ -84,6 +87,9 @@ with FSWSynt('COM12') as synt:
     #synt.turn_on()
     time.sleep(0.01)
     print('The current frequency is: ' + str(synt.get_freq()))
+    #synt.set_power(power)
+    #time.sleep(0.01)
+    print('The power is: ' + str(synt.get_power()))
     logger.debug('The current frequency of the second synthetizer is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 time.sleep(1)

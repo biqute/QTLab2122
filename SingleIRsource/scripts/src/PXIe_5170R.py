@@ -15,7 +15,7 @@ class PXIeSignalAcq(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, device_address, trigger: dict, channels=[0,1], records=3, sample_rate=5e7, length=4000, ref_pos=40.0):
+    def __init__(self, device_address, trigger: dict, channels=[0,1], records=3, sample_rate=5e7, length=4000, ref_pos=20.0):
         
         try:
             self.session = ni.Session(device_address)
@@ -24,7 +24,8 @@ class PXIeSignalAcq(object):
         except:
             self.logger.debug('Not connected to PXIe')
 
-        self.waveform, self.i_matrix, self.q_matrix, self.timestamp = [], [], [], []
+        self.waveform, self.i_matrix_ch0, self.q_matrix_ch0, self.timestamp_ch0 = [], [], [], []
+        self.i_matrix_ch1, self.q_matrix_ch1, self.timestamp_ch1 = [], [], []
 
         self.length   = length
         self.trigger  = trigger
@@ -88,13 +89,13 @@ class PXIeSignalAcq(object):
 
         self.get_status()
 
-        #self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=5, relative_to=ni.FetchRelativeTo.PRETRIGGER, num_records=self.records) for i in self.channels])
-        try:
+        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=10, relative_to=ni.FetchRelativeTo.PRETRIGGER, num_records=self.records) for i in self.channels])
+        """ try:
             self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=5, relative_to=ni.FetchRelativeTo.PRETRIGGER, num_records=self.records) for i in self.channels])
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
-            print('no')
-            #it doesn't print anything
+            print('no')"""
+            #it doesn't print anything MARCO
 
         # Check if now works or still have problems with ni constants -> now it works
         self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(self.session.acquisition_start_time))
@@ -119,15 +120,18 @@ class PXIeSignalAcq(object):
 
         while current_pos < total_samples:
             for channel, wfm in zip(self.channels, self.waveform):
-                try:
+                self.session.channels[channel].fetch_into(wfm[current_pos:current_pos + samples_per_fetch], relative_to=ni.FetchRelativeTo.READ_POINTER, offset=0, record_number=0, num_records=1)
+                """try:
                     self.session.channels[channel].fetch_into(wfm[current_pos:current_pos + samples_per_fetch], relative_to=ni.FetchRelativeTo.READ_POINTER, offset=0, record_number=0, num_records=1)
                 except ni.errors.DriverError as err:
-                    self.logger.error(str(err))
+                    self.logger.error(str(err))"""
 
             current_pos += samples_per_fetch
 
-        self.i_matrix.append(np.array(self.waveform[0]))
-        self.q_matrix.append(np.array(self.waveform[1]))
+        self.i_matrix_ch0.append(np.array(self.waveform[0]))
+        self.q_matrix_ch0.append(np.array(self.waveform[1]))
+        self.i_matrix_ch1.append(np.array(self.waveform[2]))
+        self.q_matrix_ch1.append(np.array(self.waveform[3]))
 
         #self.i_matrix = self.i_matrix[0]
         #self.q_matrix = self.q_matrix[0]
@@ -138,8 +142,10 @@ class PXIeSignalAcq(object):
 
     def acq(self): # use this for frequencies scan, for each frequency takes some points and averages over them
         self.logger.debug('Scanning frequencies')
-        self.i_matrix.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=5)[0].samples).mean())
-        self.q_matrix.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=5)[0].samples).mean())
+        self.i_matrix_ch0.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=5)[0].samples).mean())
+        self.q_matrix_ch0.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=5)[0].samples).mean())
+        self.i_matrix_ch1.append(np.array(self.session.channels[self.channels[2]].read(num_samples=self.length, timeout=5)[0].samples).mean())
+        self.q_matrix_ch1.append(np.array(self.session.channels[self.channels[3]].read(num_samples=self.length, timeout=5)[0].samples).mean())
 
         return None
 
@@ -152,9 +158,12 @@ class PXIeSignalAcq(object):
 
     def fill_matrix(self, return_data=False):
         for i in range(self.records):
-            self.i_matrix.append(np.array(self.waveform[0][i].samples))
-            self.q_matrix.append(np.array(self.waveform[1][i].samples))
-            self.timestamp.append(self.waveform[0][i].absolute_initial_x)
+            self.i_matrix_ch0.append(np.array(self.waveform[0][i].samples))
+            self.q_matrix_ch0.append(np.array(self.waveform[1][i].samples))
+            self.timestamp_ch0.append(self.waveform[0][i].absolute_initial_x)
+            self.i_matrix_ch1.append(np.array(self.waveform[2][i].samples))
+            self.q_matrix_ch1.append(np.array(self.waveform[3][i].samples))
+            self.timestamp_ch1.append(self.waveform[2][i].absolute_initial_x)
             
         self.logger.debug("Raw data I and Q were collected for trigger acquisition")
 
@@ -165,11 +174,14 @@ class PXIeSignalAcq(object):
     
     def storage_hdf5(self, name):
         with h5py.File(name, 'w') as hdf:
-            hdf.create_dataset('i_signal', data=self.i_matrix, compression='gzip', compression_opts=9)
-            hdf.create_dataset('q_signal', data=self.q_matrix, compression='gzip', compression_opts=9)
+            hdf.create_dataset('i_signal_ch0', data=self.i_matrix_ch0, compression='gzip', compression_opts=9)
+            hdf.create_dataset('q_signal_ch0', data=self.q_matrix_ch0, compression='gzip', compression_opts=9)
+            hdf.create_dataset('i_signal_ch1', data=self.i_matrix_ch1, compression='gzip', compression_opts=9)
+            hdf.create_dataset('q_signal_ch1', data=self.q_matrix_ch1, compression='gzip', compression_opts=9)
             
             try:
-                hdf.create_dataset('timestamp', data=self.timestamp, compression='gzip', compression_opts=9)
+                hdf.create_dataset('timestamp_ch0', data=self.timestamp_ch0, compression='gzip', compression_opts=9)
+                hdf.create_dataset('timestamp_ch1', data=self.timestamp_ch1, compression='gzip', compression_opts=9)
             except:
                 pass
 

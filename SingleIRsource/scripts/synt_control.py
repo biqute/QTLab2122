@@ -1,9 +1,9 @@
-from src import FSWSynt
+from src.FSW_0010   import *
 import time 
 
 ########## parameters that can be changed
-device_address = "COM12"       #location of the synthetizer 
-freq           = 5.86905       #frequency to set or central frequency of the scan [GHz]
+device_address = "COM12"       #location of the synthetizer com12 è synt1
+freq           = 5.63          #frequency to set or central frequency of the scan [GHz]
 scan           = False         #True = perform a scan over a frequencies interval
                                #False = set the synthetizer on a specific frequency
 step           = 0.0002        #step for the frequencies scan [GHz]
@@ -23,7 +23,9 @@ with FSWSynt(device_address) as test:
     else:
         print(test.set_freq(freq))
         time.sleep(0.2)
-        print('The frequency is: %d' %test.get_freq())
-        test.set_power(10)
+        test.turn_on()
+        #print(test.set_power(10))
         time.sleep(0.2)
-        print('The power is: %d' %test.get_power())
+        print('The frequency is: %f' %test.get_freq())
+        time.sleep(0.2)
+        #print('The power is: %f' %test.get_power())

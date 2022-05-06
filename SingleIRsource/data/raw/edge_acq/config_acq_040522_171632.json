@@ -1,1 +1,0 @@
-{"freq": [5.86905, 5.869051], "file_name": "acq_040522_171632", "records": 10, "channels": [0, 1], "sample_rate": 1000000.0, "length": 100, "resonators": [0], "trigger": {"trigger_type": "IMMEDIATE", "trigger_source": "0", "trigger_slope": "POSITIVE", "trigger_level": "0.1", "trigger_delay": "0.0"}, "ADCmax": 5, "ADCmin": -5, "ADCnbit": 14}

@@ -38,17 +38,32 @@ def get_hdf5(name):
     logger.debug("Load the HDF5 file: " + name)
     return I, Q
 
+def get_hdf5_2(name): 
+    with h5py.File(name, 'r') as hdf:
+        I1, Q1, I2, Q2 = [], [], [], []
+        for i in range(len(np.array(hdf['i_signal_ch0']))):
+            I1.append(np.array(hdf['i_signal_ch0'])[i])
+            Q1.append(np.array(hdf['q_signal_ch0'])[i])
+            I2.append(np.array(hdf['i_signal_ch1'])[i])
+            Q2.append(np.array(hdf['q_signal_ch1'])[i])
+    logger.debug("Load the HDF5 file: " + name)
+    return I1, Q1, I2, Q2
+
 #returns two matrices, I and Q and their timestamps
 #useful for acquisition, where many records are acquired
 def get_hdf5_time(name): 
     with h5py.File(name, 'r') as hdf:
-        I, Q, t = [], []
-        for i in range(len(np.array(hdf['i_signal']))):
-            I.append(np.array(hdf['i_signal'])[i])
-            Q.append(np.array(hdf['q_signal'])[i])
-        t = np.array(hdf['timestamp'])
+        I1, Q1, t1 = [], []
+        I2, Q2, t2 = [], []
+        with h5py.File(name, 'r') as hdf:
+            I1 = np.array(hdf['i_signal_ch0'])
+            Q1 = np.array(hdf['q_signal_ch0'])
+            t1 = np.array(hdf['timestamp_ch0'])
+            I2 = np.array(hdf['i_signal_ch1'])
+            Q2 = np.array(hdf['q_signal_ch1'])
+            t2 = np.array(hdf['timestamp_ch1'])
     logger.debug("Load the HDF5 file with timestamp: " + name)
-    return I, Q, t
+    return I1, Q1, t1, I2, Q2, t2
 
 #use this after the frequncies scan
 #for each frequencies n points are taken, this function returns the points mean 
@@ -113,10 +128,10 @@ def der_IQ(x, I, Q, begin=-1, end=-1, plot = False):
     if plot:
         plt.plot(x[begin:(end-1)], tot)
     if -tot.min() > tot.max():
-        logger.debug('Point found during the falling at position %d with a frequency of %.5f.' %(begin + np.argmin(tot), x[begin + np.argmin(tot)])) # For the max in falling
+        print('Point found during the falling at position %d with a frequency of %.5f.' %(begin + np.argmin(tot), x[begin + np.argmin(tot)])) # For the max in falling
         return begin + np.argmin(tot)
     else:
-        logger.debug('Point found during the rising at position %d with a frequency of %.5f.' %(begin + np.argmax(tot), x[begin + np.argmax(tot)])) # For the max in rising
+        print('Point found during the rising at position %d with a frequency of %.5f.' %(begin + np.argmax(tot), x[begin + np.argmax(tot)])) # For the max in rising
         return begin + np.argmax(tot)
 
 #plot of I, Q, IQ, module from the arrays of I and Q
