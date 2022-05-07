@@ -64,9 +64,6 @@ with FSWSynt('COM12') as synt, FSWSynt('COM7') as synt2:
         #print(i)
         daq.acq()   
         time.sleep(0.005)
-
-#da commentare
-
     
 """    
     for i in range(-config['window'], config['window']):
@@ -79,7 +76,8 @@ with FSWSynt('COM12') as synt, FSWSynt('COM7') as synt2:
 
 daq.storage_hdf5(config['path'] + config['file_name'] + '.h5')
 daq.close()
-print(':)')
+
+print('Done :) \nSaving..')
 """
 with h5py.File(path + config['file_name'] + '.h5', 'w') as hdf:
     hdf.create_dataset('i_signal_ch0', data=np.random.rand(config['window']*2), compression='gzip', compression_opts=9)

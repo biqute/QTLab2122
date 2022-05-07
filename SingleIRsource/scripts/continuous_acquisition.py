@@ -50,23 +50,21 @@ logger.debug('Records: '           + str(config['records']))
 logger.debug('Channels: '          + str(config['channels']))
 logger.debug('Sample rate: '       + str(config['sample_rate']))
 logger.debug('Total samples: '     + str(config['total_samples']))
-logger.debug('Total time: '        + str(total_acq_time))
+logger.debug('Total time: '        + str(config['total_acq_time']))
 
 for key in trigger:
     logger.debug(str(key) + ': ' + trigger[key]) 
 
 with FSWSynt("COM12") as synt:
-    #print(synt.get_ID())
     synt.set_freq(config['freq'][0])
     time.sleep(0.005) #IMPORTANT for real time communication
-    print('The current frequency is: ' + str(synt.get_freq()))
+    print('The current frequency of ' + str(synt.get_ID()) + ' is: ' + str(synt.get_freq()))
 
 with FSWSynt("COM7") as synt:
-    #print(synt.get_ID())
     synt.set_freq(config['freq'][1])
     time.sleep(0.005) #IMPORTANT for real time communication
     #synt.turn_on()
-    print('The current frequency is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
+    print('The current frequency of ' + str(synt.get_ID()) + ' is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 
 with PXIeSignalAcq("PXI1Slot2", trigger=trigger, records=config['records'], channels=config['channels'], sample_rate=sample_rate, length=1, ref_pos=0.0) as daq:

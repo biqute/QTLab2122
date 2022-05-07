@@ -23,8 +23,9 @@ class PXIeSignalAcq(object):
             self.logger.debug('Connected to PXIe')
         except:
             self.logger.debug('Not connected to PXIe')
-
-        self.waveform, self.i_matrix_ch0, self.q_matrix_ch0, self.timestamp_ch0 = [], [], [], []
+ 
+        self.waveform = []
+        self.i_matrix_ch0, self.q_matrix_ch0, self.timestamp_ch0 = [], [], []
         self.i_matrix_ch1, self.q_matrix_ch1, self.timestamp_ch1 = [], [], []
 
         self.length   = length
@@ -67,20 +68,20 @@ class PXIeSignalAcq(object):
 
     def read(self):
         try:
-            self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=0) for i in self.channels])
+            self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=5) for i in self.channels])
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
             exit()
 
         self.get_status()
         # Check if now works or still have problems with ni constants
-        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(ni.Session.acquisition_start_time))
-        self.logger.debug('Actual number of samples acquired in the record: ' + str(ni.Session.points_done))
-        self.logger.debug('Number of records that have been completely acquired: ' + str(ni.Session.records_done))
+        self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(self.session.acquisition_start_time))
+        self.logger.debug('Actual number of samples acquired in the record: ' + str(self.session.points_done))
+        self.logger.debug('Number of records that have been completely acquired: ' + str(self.session.records_done))
 
         return None
 
-    def fetch(self):
+    def fetch(self, timeout=10):
         try:
             self.session.initiate()
         except ni.errors.DriverError as err:
@@ -89,7 +90,7 @@ class PXIeSignalAcq(object):
 
         self.get_status()
 
-        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=10, relative_to=ni.FetchRelativeTo.PRETRIGGER, num_records=self.records) for i in self.channels])
+        self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=timeout, relative_to=ni.FetchRelativeTo.PRETRIGGER, num_records=self.records) for i in self.channels])
         """ try:
             self.waveform.extend([self.session.channels[i].fetch(num_samples=self.length, timeout=5, relative_to=ni.FetchRelativeTo.PRETRIGGER, num_records=self.records) for i in self.channels])
         except ni.errors.DriverError as err:
@@ -128,13 +129,16 @@ class PXIeSignalAcq(object):
 
             current_pos += samples_per_fetch
 
-        self.i_matrix_ch0.append(np.array(self.waveform[0]))
-        self.q_matrix_ch0.append(np.array(self.waveform[1]))
-        self.i_matrix_ch1.append(np.array(self.waveform[2]))
-        self.q_matrix_ch1.append(np.array(self.waveform[3]))
+        #TEST
+        self.i_matrix_ch0 = np.array(self.waveform[0])
+        self.q_matrix_ch0 = np.array(self.waveform[1])
+        self.i_matrix_ch1 = np.array(self.waveform[2])
+        self.q_matrix_ch1 = np.array(self.waveform[3])
 
-        #self.i_matrix = self.i_matrix[0]
-        #self.q_matrix = self.q_matrix[0]
+        #self.i_matrix_ch0.append(np.array(self.waveform[0]))
+        #self.q_matrix_ch0.append(np.array(self.waveform[1]))
+        #self.i_matrix_ch1.append(np.array(self.waveform[2]))
+        #self.q_matrix_ch1.append(np.array(self.waveform[3]))
 
         self.logger.debug('Raw data I and Q were collected for continuous acquisition')
 
@@ -189,11 +193,11 @@ class PXIeSignalAcq(object):
 
         return None
 
-    def get_hdf5(self, name):
+    def get_hdf5(self, name): #only one channel
         with h5py.File(name, 'r') as hdf:
-            I = np.array(hdf['i_signal'])
-            Q = np.array(hdf['q_signal'])
-            timestamp = np.array(hdf['timestamp'])
+            I = np.array(hdf['i_signal_ch0'])
+            Q = np.array(hdf['q_signal_ch0'])
+            timestamp = np.array(hdf['timestamp_ch0'])
 
         self.logger.debug("Load the HDF5 file: " + name)
 

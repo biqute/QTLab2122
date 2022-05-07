@@ -28,36 +28,36 @@ path = 'data/raw/edge_acq/'
 
 config = {
     'freq'        : [5.63124, 5.86436]      ,        # frequency chosen to study I and Q (GHz)
-    'file_name'   : name           ,        # name of the file where data will be saved
-    'records'     : 1000            ,        # numer of records to store
-    'channels'    : [0,1,2,3]          ,        # list of enabled channels
-    'sample_rate' : 1e8            ,        # rate of points sampling of PXIe-5170R
-    'length'      : 2000           ,        # record length? maybe it's just the number of points it takes, if the trigger fires later it doesn't take them check what really happens, check the parameters in input to read and simulate the records to see if fill_matrix works
-    'resonators'  : [0,1]                     # list of resonators used, it's probably a useless variable
+    'file_name'   : name                    ,        # name of the file where data will be saved
+    'records'     : 1000                    ,        # number of records to store
+    'channels'    : [0,1,2,3]               ,        # list of enabled channels
+    'sample_rate' : 1e8                     ,        # rate of points sampling of PXIe-5170R
+    'length'      : 2000                    ,        # record length
+    'resonators'  : [0,1]                            # list of resonators used, it's probably a useless variable
 }               
 
 trigger = dict(
     trigger_type   = 'IMMEDIATE',         #'EDGE', 'IMMEDIATE' or 'DIGITAL'
     trigger_source = '1',
-    trigger_slope  = 'NEGATIVE',     #'POSITIVE' or 'NEGATIVE'
+    trigger_slope  = 'NEGATIVE',          #'POSITIVE' or 'NEGATIVE'
     trigger_level  = '-0.061',
     trigger_delay  = '0.0'
 )
 
 config['trigger'] = trigger
-config['ADCmax']  =  5
-config['ADCmin']  = -5
+config['ADCmax']  =  1
+config['ADCmin']  = -1
 config['ADCnbit'] = 14
 
 ###########
 
 # Logging all the setting infos
-logger.debug('Frequency: '         + str(config['freq']))
-logger.debug('Filename: '          + str(config['file_name']))
-logger.debug('Records: '           + str(config['records']))
-logger.debug('Channels: '          + str(config['channels']))
-logger.debug('Sample rate: '       + str(config['sample_rate']))
-logger.debug('Length: '            + str(config['length']))
+logger.debug('Frequency: '     + str(config['freq']))
+logger.debug('Filename: '      + str(config['file_name']))
+logger.debug('Records: '       + str(config['records']))
+logger.debug('Channels: '      + str(config['channels']))
+logger.debug('Sample rate: '   + str(config['sample_rate']))
+logger.debug('Length: '        + str(config['length']))
 
 for key in trigger:
     logger.debug(str(key) + ': '   + trigger[key])
@@ -67,22 +67,20 @@ for key in trigger:
 
 
 with FSWSynt("COM12") as synt:
-    #print(synt.get_ID())
     synt.set_freq(config['freq'][0])
     time.sleep(0.005) #IMPORTANT for real time communication
     synt.turn_on()
-    print('The current frequency is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
+    print('The current frequency of ' + str(synt.get_ID()) + ' is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 with FSWSynt("COM7") as synt:
-    #print(synt.get_ID())
     synt.set_freq(config['freq'][1])
     time.sleep(0.005) #IMPORTANT for real time communication
     synt.turn_on()
-    print('The current frequency is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
+    print('The current frequency of ' + str(synt.get_ID()) + ' is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 time.sleep(0.1)
 
-with PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=config['records'], channels=config['channels'], sample_rate=config['sample_rate'], length=config['length']) as daq:
+with PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=config['records'], channels=config['channels'], sample_rate=config['sample_rate'], length=config['length'], ref_pos=20.0) as daq:
     daq.fetch()
     daq.fill_matrix()
     daq.storage_hdf5(path + config['file_name'] + '.h5')

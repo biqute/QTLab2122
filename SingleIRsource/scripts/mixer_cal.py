@@ -69,27 +69,19 @@ for key in trigger:
 # and the IQ ellipses are digitized at a sample rate of 2 kHz for 1 second 
 # (two circles are recorded)
 with FSWSynt('COM7') as synt:
-    print(synt.get_ID())
     synt.set_freq(config['freq1'])
     time.sleep(0.01) #IMPORTANT for real time communication
     #synt.turn_on()
     time.sleep(0.01)
-    print('The current frequency is: ' + str(synt.get_freq()))
-    #synt.set_power(power)
-    #time.sleep(0.01)
-    print('The power is: ' + str(synt.get_power()))
+    print('The current frequency of ' + print(synt.get_ID()) + ' is: ' + str(synt.get_freq()))
     logger.debug('The current frequency of the first synthetizer is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 with FSWSynt('COM12') as synt:
-    print(synt.get_ID())
     synt.set_freq(config['freq2'])
     time.sleep(0.01) #IMPORTANT for real time communication
     #synt.turn_on()
     time.sleep(0.01)
-    print('The current frequency is: ' + str(synt.get_freq()))
-    #synt.set_power(power)
-    #time.sleep(0.01)
-    print('The power is: ' + str(synt.get_power()))
+    print('The current frequency of ' + print(synt.get_ID()) + ' is: ' + str(synt.get_freq()))
     logger.debug('The current frequency of the second synthetizer is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 time.sleep(1)

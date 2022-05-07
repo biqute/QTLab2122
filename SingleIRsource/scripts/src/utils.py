@@ -31,21 +31,17 @@ def storage_hdf5(file, *args):
 #useful for acquisition, where many records are acquired
 def get_hdf5(name): 
     with h5py.File(name, 'r') as hdf:
-        I, Q = [], []
-        for i in range(len(np.array(hdf['i_signal']))):
-            I.append(np.array(hdf['i_signal'])[i])
-            Q.append(np.array(hdf['q_signal'])[i])
+        I = np.array(hdf['i_signal'])
+        Q = np.array(hdf['q_signal'])
     logger.debug("Load the HDF5 file: " + name)
     return I, Q
 
 def get_hdf5_2(name): 
     with h5py.File(name, 'r') as hdf:
-        I1, Q1, I2, Q2 = [], [], [], []
-        for i in range(len(np.array(hdf['i_signal_ch0']))):
-            I1.append(np.array(hdf['i_signal_ch0'])[i])
-            Q1.append(np.array(hdf['q_signal_ch0'])[i])
-            I2.append(np.array(hdf['i_signal_ch1'])[i])
-            Q2.append(np.array(hdf['q_signal_ch1'])[i])
+        I1 = np.array(hdf['i_signal_ch0'])
+        Q1 = np.array(hdf['q_signal_ch0'])
+        I2 = np.array(hdf['i_signal_ch1'])
+        Q2 = np.array(hdf['q_signal_ch1'])
     logger.debug("Load the HDF5 file: " + name)
     return I1, Q1, I2, Q2
 
@@ -53,15 +49,12 @@ def get_hdf5_2(name):
 #useful for acquisition, where many records are acquired
 def get_hdf5_time(name): 
     with h5py.File(name, 'r') as hdf:
-        I1, Q1, t1 = [], []
-        I2, Q2, t2 = [], []
-        with h5py.File(name, 'r') as hdf:
-            I1 = np.array(hdf['i_signal_ch0'])
-            Q1 = np.array(hdf['q_signal_ch0'])
-            t1 = np.array(hdf['timestamp_ch0'])
-            I2 = np.array(hdf['i_signal_ch1'])
-            Q2 = np.array(hdf['q_signal_ch1'])
-            t2 = np.array(hdf['timestamp_ch1'])
+        I1 = np.array(hdf['i_signal_ch0'])
+        Q1 = np.array(hdf['q_signal_ch0'])
+        t1 = np.array(hdf['timestamp_ch0'])
+        I2 = np.array(hdf['i_signal_ch1'])
+        Q2 = np.array(hdf['q_signal_ch1'])
+        t2 = np.array(hdf['timestamp_ch1'])
     logger.debug("Load the HDF5 file with timestamp: " + name)
     return I1, Q1, t1, I2, Q2, t2
 
@@ -81,6 +74,7 @@ def check_length(I, Q):
     length = len(I) if len(I) <= len(Q) else len(Q)
     if len(I) != len(Q):
         logger.debug('Lengths of I and Q are different! I = %d, Q = %d' %(len(I),len(Q)))
+        print('Lengths of I and Q are different! I = %d, Q = %d' %(len(I),len(Q)))
     return length
 
 #only to set start and end of the arrays
@@ -217,13 +211,17 @@ def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity
     for i in range(len(sample)):
 
         first_derivative = np.gradient(moving_averages[i])
-        std = np.std(first_derivative[0:50])/2 #50 will become a function of length and pos_ref in PXIe
+        std = np.std(first_derivative[0:100]) #100 will become a function of length and pos_ref in PXIe
         index_min = first_derivative.argmax() if polarity == 1 else first_derivative.argmin()
         
         rise_points = 0
 
-        while first_derivative[index_min - rise_points] < -std:
-            rise_points += 1
+        if polarity == 1:
+            while first_derivative[index_min - rise_points] > std:
+                rise_points += 1
+        else:
+            while first_derivative[index_min - rise_points] < -std:
+                rise_points += 1
 
         a = 10
         start = index_min - rise_points

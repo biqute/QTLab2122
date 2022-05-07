@@ -43,6 +43,7 @@ class FSWSynt(object):
         self.write(str.encode(cmd_string))
         return "Frequency set to "+str(freq)+" GHz."
 
+    #our synt doesn't have this feature
     def get_power(self): # Value in dBm
         pow = self.ask(b'POW?\r')
         return float(pow)
@@ -50,7 +51,7 @@ class FSWSynt(object):
     def set_power(self,pow):     # default units in dB
         #if (pow < -25 or pow > 15):
         #    return "Invalid power! FSW-0010 supports [-25 dBm, +15 dBm]" # step of 0.01
-        cmd_string = 'POW ' + str(pow) + '\r' # not sure about the \r
+        cmd_string = 'POW ' + str(pow) + '\r'
         self.write(str.encode(cmd_string))
         return "Power set to "+str(pow)+" dBm."
 
