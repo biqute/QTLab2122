@@ -2,11 +2,13 @@
 
 import h5py
 import logging
-import numpy             as np
-import matplotlib.pyplot as plt
-from   datetime          import datetime
-from   scipy.signal      import savgol_filter
-from   scipy.ndimage     import convolve
+import numpy              as np
+import matplotlib.pyplot  as plt
+from   ellipse            import LsqEllipse # install lsq-ellipse
+from   matplotlib.patches import Ellipse
+from   datetime           import datetime
+from   scipy.signal       import savgol_filter
+from   scipy.ndimage      import convolve
 logger = logging.getLogger(__name__)
 
 # Get current date and time to have unique file names
@@ -127,6 +129,12 @@ def der_IQ(x, I, Q, begin=-1, end=-1, plot = False):
     else:
         print('Point found during the rising at position %d with a frequency of %.5f.' %(begin + np.argmax(tot), x[begin + np.argmax(tot)])) # For the max in rising
         return begin + np.argmax(tot)
+
+def plot_all_from_array(i1, q1, i2, q2, freq, step, begin = -1, end = -1, name = 'test', save = False):
+    begin, end = set_begin_end(begin, end, len(i1))
+    big_plot_from_array(i1, q1, freq[0], step, begin, end, name = 'test1', save = False)
+    big_plot_from_array(i2, q2, freq[1], step, begin, end, name = 'test2', save = False)
+    return
 
 #plot of I, Q, IQ, module from the arrays of I and Q
 def big_plot_from_array(I, Q, ref, step, begin = -1, end = -1, name = 'test', save = False):
@@ -251,11 +259,11 @@ def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity
 
     return index_mins
 
-def segmentation_index(sample, window_ma=20, polarity=1, threshold=0):
+def segmentation_index(sample, window_ma=20, polarity=1, threshold=0, debounce=5):
     logger.debug('Find the indexes in order to segment the continuous acquisition using also a debouncing')
-    weights = np.full(window_ma, 1/window_ma)
+    weights = np.full((1, window_ma), 1/window_ma)
     moving_averages = convolve(sample, weights, mode='mirror')
-    first_derivative = np.gradient(moving_averages)
+    first_derivative = np.gradient(moving_averages[0])
     i = 0
     count = 0
     index = []
@@ -268,7 +276,7 @@ def segmentation_index(sample, window_ma=20, polarity=1, threshold=0):
             else:
                 count = 0
 
-            if count == 4:
+            if count == debounce:
                 index.append(i)
                 count = 0
 
@@ -284,7 +292,7 @@ def segmentation_index(sample, window_ma=20, polarity=1, threshold=0):
             else:
                 count = 0
 
-            if count == 5:
+            if count == debounce:
                 index.append(i)
                 count = 0
 
@@ -293,10 +301,12 @@ def segmentation_index(sample, window_ma=20, polarity=1, threshold=0):
             i += 1
     return index
 
-def segmentation_iq(i, q, index, ref_pos=0.3, length=10):
+def segmentation_iq(i1, q1, i2, q2, index, ref_pos=0.2, length = 2000):
     logger.debug('Segmentation of continuous acquisition for I and Q signals')
-    i_matrix = []
-    q_matrix = []
+    i1_matrix = []
+    q1_matrix = []
+    i2_matrix = []
+    q2_matrix = []
 
     pre = int(ref_pos*length)
     post = int((1-ref_pos)*length)
@@ -305,11 +315,46 @@ def segmentation_iq(i, q, index, ref_pos=0.3, length=10):
     while k < len(index):
         j = index[k]
 
-        i_matrix.append(i[j-pre:j+post])
-        q_matrix.append(q[j-pre:j+post])
+        i1_matrix.append(i1[j-pre:j+post])
+        q1_matrix.append(q1[j-pre:j+post])
+        i2_matrix.append(i2[j-pre:j+post])
+        q2_matrix.append(q2[j-pre:j+post])
 
         if (k+1 < len(index)) and ((index[k+1]-j) < 50):
             k += 1
         k += 1
 
-    return i_matrix, q_matrix
+    return i1_matrix, q1_matrix, i2_matrix, q2_matrix
+
+def ellipse_fit(I, Q, plot=False, run = 1):
+    X   = np.array(list(zip(I, Q))) 
+    #print('X=',X)
+    par = LsqEllipse().fit(X)
+    center, width, height, phi = par.as_parameters()
+    # center = coordinates of ellipse center
+    # width  = Total length (diameter) of horizontal axis (a, the largest)
+    # height = Total length (diameter) of vertical axis (b, the smallest)
+    # angle  = Rotation in degrees anti-clockwise (radians)
+
+    # print(f'center: {center[0]:.3f}, {center[1]:.3f}')
+    # print(f'width: {width:.3f}')
+    # print(f'height: {height:.3f}')
+    # print(f'phi: {phi:.3f}')
+
+    if plot:
+        fig = plt.figure(figsize=(6, 6))
+        ax  = plt.subplot()
+        ax.axis('equal')
+        ax.plot(I ,Q, 'ro', zorder=1)
+        ellipse = Ellipse(
+            xy=center, width=2*width, height=2*height, angle=np.rad2deg(phi), edgecolor='b', fc='None', lw=2, label='Fit', zorder=2
+        )
+        ax.add_patch(ellipse)
+
+        plt.xlabel('I')
+        plt.ylabel('Q')
+
+        plt.legend()
+        #plt.savefig('IQfit_ellipse' + str(run) + '.png') 
+    
+    return center, width, height, phi

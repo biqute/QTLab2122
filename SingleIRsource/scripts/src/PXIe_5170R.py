@@ -22,7 +22,9 @@ class PXIeSignalAcq(object):
 
             self.logger.debug('Connected to PXIe')
         except:
+            print('Not connected to PXIe :(')
             self.logger.debug('Not connected to PXIe')
+            return 0
  
         self.waveform = []
         self.i_matrix_ch0, self.q_matrix_ch0, self.timestamp_ch0 = [], [], []
@@ -52,29 +54,32 @@ class PXIeSignalAcq(object):
     
     def __exit__(self, *exc):
         self.logger.debug('Closed session')
-        try:
+        self.session.close()
+        """try:
             self.session.close()
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
-            exit() 
+            exit() """
 
     def close(self):
         self.logger.debug('Closed session')
-        try:
+        self.session.close()
+        """try:
             self.session.close()
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
-            exit() 
+            exit() """
 
     def read(self):
-        try:
+        self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=5) for i in self.channels])
+        """try:
             self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=5) for i in self.channels])
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
-            exit()
+            exit()"""
 
         self.get_status()
-        # Check if now works or still have problems with ni constants
+        
         self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(self.session.acquisition_start_time))
         self.logger.debug('Actual number of samples acquired in the record: ' + str(self.session.points_done))
         self.logger.debug('Number of records that have been completely acquired: ' + str(self.session.records_done))
@@ -82,11 +87,12 @@ class PXIeSignalAcq(object):
         return None
 
     def fetch(self, timeout=10):
-        try:
+        self.session.initiate()
+        """try:
             self.session.initiate()
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
-            exit()
+            exit()"""
 
         self.get_status()
 
@@ -96,9 +102,7 @@ class PXIeSignalAcq(object):
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
             print('no')"""
-            #it doesn't print anything MARCO
 
-        # Check if now works or still have problems with ni constants -> now it works
         self.logger.debug('Time from the trigger event to the first point in the waveform record: ' + str(self.session.acquisition_start_time))
         self.logger.debug('Actual number of samples acquired in the record: ' + str(self.session.points_done))
         self.logger.debug('Number of records that have been completely acquired: ' + str(self.session.records_done))
@@ -108,11 +112,12 @@ class PXIeSignalAcq(object):
         return None
 
     def continuous_acq(self, total_samples, samples_per_fetch):
-        try:
+        self.session.initiate()
+        """try:
             self.session.initiate()
         except ni.errors.DriverError as err:
             self.logger.error(str(err))
-            exit()
+            exit()"""
         
         current_pos = 0
         self.waveform = [np.ndarray(total_samples, dtype=np.float64) for c in self.channels]
@@ -153,13 +158,6 @@ class PXIeSignalAcq(object):
 
         return None
 
-    def acq2(self): # use this for frequencies scan, for each frequency takes some points and averages over them
-        self.logger.debug('Scanning frequencies')
-        self.i_matrix.append(np.array(self.session.channels[self.channels[2]].read(num_samples=self.length, timeout=5)[0].samples).mean())
-        self.q_matrix.append(np.array(self.session.channels[self.channels[3]].read(num_samples=self.length, timeout=5)[0].samples).mean())
-
-        return None
-
     def fill_matrix(self, return_data=False):
         for i in range(self.records):
             self.i_matrix_ch0.append(np.array(self.waveform[0][i].samples))
@@ -192,16 +190,6 @@ class PXIeSignalAcq(object):
         self.logger.debug("Raw data I and Q were stored in an HDF5 file: " + name)
 
         return None
-
-    def get_hdf5(self, name): #only one channel
-        with h5py.File(name, 'r') as hdf:
-            I = np.array(hdf['i_signal_ch0'])
-            Q = np.array(hdf['q_signal_ch0'])
-            timestamp = np.array(hdf['timestamp_ch0'])
-
-        self.logger.debug("Load the HDF5 file: " + name)
-
-        return I, Q, timestamp
 
     def get_status(self):
         self.logger.debug("Acquisition status: " + str(self.session.acquisition_status())) # Understand why is print all this stuff in log
