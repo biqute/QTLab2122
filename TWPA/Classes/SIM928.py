@@ -76,11 +76,13 @@ class SIM928(object):
     #comandi voltaggio
     def set_voltage(self, voltage=0.0):
         self.write('VOLT ' + str(voltage))
+        #self.query('*OPC?')
+        time.sleep(0.005)
         
     def ask_voltage(self):
-        a=self.query('VOLT?')
-        print("Voltage = " + a + " V")
-        return a
+        v=self.query('VOLT?')
+        #print("Voltage = " + a + " V")
+        return float(v)
     
     #comandi batteria
     def battery_status(self):
