@@ -16,6 +16,7 @@ import sys
 sys.path.append(str(path.parent) + '\\Classes\\')
 from SMA100B import *
 from vna import *
+from SIM928 import *
 
 
 
@@ -55,7 +56,7 @@ def waitUntil(condition):
             time.sleep(0.5)
 
 def my_plot(f, d, plot_title = None):
-    plt.figure(figsize=(20,15))
+        #plt.figure(figsize=(20,15))
     f = f * 1e-9
     plt.plot(f,d)
     plt.grid()
@@ -81,6 +82,40 @@ def import_csv(folder, filename):  #filename w/o extension
     return f, d
 
 def indexes_of_max(arr):
-    a = np.where(arr >= np.max(arr),arr,0)
-    ind = np.nonzero(a)
-    return ind
+    return np.where(arr >= np.max(arr))
+
+def envelopes(s, dmin=1, dmax=1, split=False):
+    """
+    Input :
+    s: 1d-array, data signal from which to extract high and low envelopes
+    dmin, dmax: int, optional, size of chunks, use this if the size of the input signal is too big
+    split: bool, optional, if True, split the signal in half along its mean, might help to generate the envelope in some cases
+    Output :
+    s_low, s_high : low and high envelope of input signal s
+    """
+
+    # locals min      
+    lmin = (np.diff(np.sign(np.diff(s))) > 0).nonzero()[0] + 1 
+    # locals max
+    lmax = (np.diff(np.sign(np.diff(s))) < 0).nonzero()[0] + 1 
+
+
+    if split:
+      # s_mid is zero if s centered around x-axis or more generally mean of signal
+      s_mid = np.mean(s) 
+      # pre-sorting of locals min based on relative position with respect to s_mid 
+      lmin = lmin[s[lmin]<s_mid]
+      # pre-sorting of local max based on relative position with respect to s_mid 
+      lmax = lmax[s[lmax]>s_mid]
+
+
+    # global max of dmax-chunks of locals max 
+    lmin = lmin[[i+np.argmin(s[lmin[i:i+dmin]]) for i in range(0,len(lmin),dmin)]]
+    # global min of dmin-chunks of locals min 
+    lmax = lmax[[i+np.argmax(s[lmax[i:i+dmax]]) for i in range(0,len(lmax),dmax)]]
+
+
+    t = np.arange(s.size)
+    s_low = np.interp(t, t[lmin], s[lmin])
+    s_high = np.interp(t, t[lmax], s[lmax])
+    return s_low, s_high
