@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 logger.info('START EXECUTION')
 
 ########## CONFIG PARAMETERS
-runnumb = 47
-name        = 'scan_wide_off_res_' + str(runnumb)  # (scan_off_, scan_res_, scan_wide_off_, scan_wide_res_)
+runnumb = 42
+name        = 'scan_wide_res_' + str(runnumb)  # (scan_off_, scan_res_, scan_wide_off_, scan_wide_res_)
 path        = 'data/raw/cal_acq/'
 
 config = {
     'runnumb'    : runnumb             ,
-    'ref'        : [5.63134, 5.86446]  ,    # expected frequency for the resonance, central point on x axis (GHz) 5.8627 - 5.6305 - 5.63134 - 5.86446
+    'ref'        : [5.86622, 5.63566]  ,    # expected frequency for the resonance, central point on x axis (GHz) 5.8627 - 5.6305 - 5.63134 - 5.86446
     'window'     : 1000                ,    # length of half of the interval on x axis, 1000 wide, 250 non wide
     'step'       : 0.00002             ,    # length of a single step during the frequency sweep (GHz)
     'path'       : path                ,    # path where data will be saved

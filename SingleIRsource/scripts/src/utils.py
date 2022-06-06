@@ -33,11 +33,12 @@ def storage_hdf5(file, *args):
 #useful for acquisition, where many records are acquired
 def get_hdf5(name): 
     with h5py.File(name, 'r') as hdf:
-        I = np.array(hdf['i_signal'])
-        Q = np.array(hdf['q_signal'])
+        I = np.array(hdf['i_signal_ch0'])
+        Q = np.array(hdf['q_signal_ch0'])
     logger.debug("Load the HDF5 file: " + name)
     return I, Q
 
+#returns two matrices, I and Q, for each resonator
 def get_hdf5_2(name): 
     with h5py.File(name, 'r') as hdf:
         I1 = np.array(hdf['i_signal_ch0'])
@@ -165,7 +166,7 @@ def big_plot_from_array(I, Q, ref, step, begin = -1, end = -1, name = 'test', sa
     if save:
         fig.patch.set_facecolor('white')
         fig.savefig('../plot/' + name + '.png', dpi=300)
-    return None
+    return x
 
 #plot of I, Q, IQ, module from the hdf5 file
 def big_plot_from_file(file, ref, step, record = 0, begin = -1, end = -1, save = False):
@@ -254,6 +255,11 @@ def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity
             min = int(np.round(vertex_parabola(x2, y1, y2, y3)))
         else:
             min = x2
+
+        # need adjustment each time if there is noise in the acquisition
+        # without noise, comment the following two lines
+        if min < 450 or min > 500:
+            min = 475
 
         index_mins.append(min)
 

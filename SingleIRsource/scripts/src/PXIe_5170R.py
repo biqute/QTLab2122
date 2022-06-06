@@ -70,6 +70,7 @@ class PXIeSignalAcq(object):
             self.logger.error(str(err))
             exit() """
 
+    # read and fetch are used to sample data from the digitizer, fetch is better
     def read(self):
         self.waveform.extend([self.session.channels[i].read(num_samples=self.length, num_records=self.records, timeout=5) for i in self.channels])
         """try:
@@ -111,6 +112,7 @@ class PXIeSignalAcq(object):
 
         return None
 
+    # acquisition of data in continuos mode
     def continuous_acq(self, total_samples, samples_per_fetch):
         self.session.initiate()
         """try:
@@ -134,22 +136,17 @@ class PXIeSignalAcq(object):
 
             current_pos += samples_per_fetch
 
-        #TEST
         self.i_matrix_ch0 = np.array(self.waveform[0])
         self.q_matrix_ch0 = np.array(self.waveform[1])
         self.i_matrix_ch1 = np.array(self.waveform[2])
         self.q_matrix_ch1 = np.array(self.waveform[3])
 
-        #self.i_matrix_ch0.append(np.array(self.waveform[0]))
-        #self.q_matrix_ch0.append(np.array(self.waveform[1]))
-        #self.i_matrix_ch1.append(np.array(self.waveform[2]))
-        #self.q_matrix_ch1.append(np.array(self.waveform[3]))
-
         self.logger.debug('Raw data I and Q were collected for continuous acquisition')
 
         return None
 
-    def acq(self): # use this for frequencies scan, for each frequency takes some points and averages over them
+    # use this for frequencies scan, for each frequency it takes n (='length') points and averages over them
+    def acq(self): 
         self.logger.debug('Scanning frequencies')
         self.i_matrix_ch0.append(np.array(self.session.channels[self.channels[0]].read(num_samples=self.length, timeout=5)[0].samples).mean())
         self.q_matrix_ch0.append(np.array(self.session.channels[self.channels[1]].read(num_samples=self.length, timeout=5)[0].samples).mean())
@@ -163,9 +160,12 @@ class PXIeSignalAcq(object):
             self.i_matrix_ch0.append(np.array(self.waveform[0][i].samples))
             self.q_matrix_ch0.append(np.array(self.waveform[1][i].samples))
             self.timestamp_ch0.append(self.waveform[0][i].absolute_initial_x)
-            self.i_matrix_ch1.append(np.array(self.waveform[2][i].samples))
-            self.q_matrix_ch1.append(np.array(self.waveform[3][i].samples))
-            self.timestamp_ch1.append(self.waveform[2][i].absolute_initial_x)
+            try:
+                self.i_matrix_ch1.append(np.array(self.waveform[2][i].samples))
+                self.q_matrix_ch1.append(np.array(self.waveform[3][i].samples))
+                self.timestamp_ch1.append(self.waveform[2][i].absolute_initial_x)
+            except:
+                pass
             
         self.logger.debug("Raw data I and Q were collected for trigger acquisition")
 
@@ -192,5 +192,5 @@ class PXIeSignalAcq(object):
         return None
 
     def get_status(self):
-        self.logger.debug("Acquisition status: " + str(self.session.acquisition_status())) # Understand why is print all this stuff in log
+        self.logger.debug("Acquisition status: " + str(self.session.acquisition_status())) 
         return None

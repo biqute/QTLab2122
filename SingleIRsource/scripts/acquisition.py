@@ -27,26 +27,27 @@ name = get_date(file_name = 'noise')
 path = 'data/raw/edge_acq/'
 
 config = {
-    'freq'        : [5.63124, 5.86436]      ,        # frequency chosen to study I and Q (GHz)
+    'freq'        : [5.86512, 5.63622]      ,        # frequency chosen to study I and Q (GHz)
     'file_name'   : name                    ,        # name of the file where data will be saved
-    'records'     : 1000                    ,        # number of records to store
+    'records'     : 10000                   ,        # number of records to store
     'channels'    : [0,1,2,3]               ,        # list of enabled channels
-    'sample_rate' : 1e8                     ,        # rate of points sampling of PXIe-5170R
-    'length'      : 2000                    ,        # record length
-    'resonators'  : [0,1]                            # list of resonators used, it's probably a useless variable
+    'sample_rate' : 5e7                     ,        # rate of points sampling of PXIe-5170R
+    'length'      : 6000                    ,        # record length
+    'resonators'  : [0,1]                   ,        # list of resonators used, it's probably a useless variable
+    'source_rate' : 700 #diode rate in hz
 }               
 
 trigger = dict(
-    trigger_type   = 'IMMEDIATE',         #'EDGE', 'IMMEDIATE' or 'DIGITAL'
+    trigger_type   = 'EDGE',         #'EDGE', 'IMMEDIATE' or 'DIGITAL'
     trigger_source = '1',
-    trigger_slope  = 'NEGATIVE',          #'POSITIVE' or 'NEGATIVE'
-    trigger_level  = '-0.061',
+    trigger_slope  = 'POSITIVE',          #'POSITIVE' or 'NEGATIVE'
+    trigger_level  = '-0.031',
     trigger_delay  = '0.0'
 )
 
 config['trigger'] = trigger
-config['ADCmax']  =  1
-config['ADCmin']  = -1
+config['ADCmax']  =  5
+config['ADCmin']  = -5
 config['ADCnbit'] = 14
 
 ###########
@@ -65,7 +66,6 @@ for key in trigger:
 # Decide how many points we want based on signal length and sample_rate
 # It seems that length indicates how long it is open, if it is 10k but the trigger goes off after 1000 it takes 9k (..?)
 
-
 with FSWSynt("COM12") as synt:
     synt.set_freq(config['freq'][0])
     time.sleep(0.005) #IMPORTANT for real time communication
@@ -81,18 +81,9 @@ with FSWSynt("COM7") as synt:
 time.sleep(0.1)
 
 with PXIeSignalAcq('PXI1Slot2', trigger=trigger, records=config['records'], channels=config['channels'], sample_rate=config['sample_rate'], length=config['length'], ref_pos=20.0) as daq:
-    daq.fetch()
+    daq.fetch(timeout=10)
     daq.fill_matrix()
     daq.storage_hdf5(path + config['file_name'] + '.h5')
-
-"""with h5py.File(path + config['file_name'] + '.h5', 'w') as hdf:
-    hdf.create_dataset('i_signal_ch0', data=np.random.rand(100,1000)*10, compression='gzip', compression_opts=9)
-    hdf.create_dataset('q_signal_ch0', data=np.random.rand(100,1000)*10, compression='gzip', compression_opts=9)
-    hdf.create_dataset('timestamp_ch0', data=np.random.rand(1000), compression='gzip', compression_opts=9)
-    hdf.create_dataset('i_signal_ch1', data=np.random.rand(100,1000)*10, compression='gzip', compression_opts=9)
-    hdf.create_dataset('q_signal_ch1', data=np.random.rand(100,1000)*10, compression='gzip', compression_opts=9)
-    hdf.create_dataset('timestamp_ch1', data=np.random.rand(1000), compression='gzip', compression_opts=9)"""
-
 
 # save config for data analysis
 cfg = json.dumps(config)

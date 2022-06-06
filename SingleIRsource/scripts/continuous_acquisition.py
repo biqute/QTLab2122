@@ -22,7 +22,7 @@ name                = get_date(file_name = 'cont_acq')
 path                = 'data/raw/cont_acq/'
 
 config = {
-'freq'              : [5.63124, 5.86436]                  ,  # frequency chosen to study I and Q (GHz)
+'freq'              : [5.86512, 5.63622]                  ,  # frequency chosen to study I and Q (GHz)
 'file_name'         : name                                ,  # name of the file where data will be saved
 'records'           : 1                                   ,  # numer of records to store
 'channels'          : [0,1,2,3]                           ,  # list of enabled channels
@@ -30,7 +30,7 @@ config = {
 'total_acq_time'    : total_acq_time                      ,  # total acquisition time in seconds
 'total_samples'     : int(total_acq_time * sample_rate)   ,  # total number of points sampled
 'samples_per_fetch' : 1000                                ,  # number of points sampled at a time during the acquisition
-'resonators'        : [0,1]                                    # list of resonators used
+'resonators'        : [0,1]                                  # list of resonators used
 }
 
 #prepare an empty array in which the waveform will be stored

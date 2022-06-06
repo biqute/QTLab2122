@@ -11,12 +11,12 @@ class FSWSynt(object):
 
     def __init__(self, device_address):
         try:
-            self.device = serial.Serial(device_address, baudrate=115200, timeout=1.5, stopbits=1, parity='N')       #stopbits
+            self.device = serial.Serial(device_address, baudrate=115200, timeout=1.5, stopbits=1, parity='N')      
             self.logger.debug('Connected to FSWSynt')
-            print(':)')
+            print('Connected to FSWSynt :)')
         except:
             self.logger.debug('Not connected to FSWSynt')
-            print(':(')
+            print('Not connected to FSWSynt :(')
 
     def write(self, msg):
         self.device.write(bytes(msg))
@@ -49,8 +49,8 @@ class FSWSynt(object):
         return float(pow)
 
     def set_power(self,pow):     # default units in dB
-        #if (pow < -25 or pow > 15):
-        #    return "Invalid power! FSW-0010 supports [-25 dBm, +15 dBm]" # step of 0.01
+        if (pow < -25 or pow > 15):
+            return "Invalid power! FSW-0010 supports [-25 dBm, +15 dBm]" # step of 0.01
         cmd_string = 'POW ' + str(pow) + '\r'
         self.write(str.encode(cmd_string))
         return "Power set to "+str(pow)+" dBm."
@@ -61,6 +61,7 @@ class FSWSynt(object):
     def __exit__(self, *exc):
         return None
 
+    # use this method to turn the output on (needed each time power is given to the synt after a shoutdown)
     def turn_on(self):
         return self.ask(b'OUTP:STAT ON\r') 
 

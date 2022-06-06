@@ -33,31 +33,32 @@ pip install -r requirements.txt
     SingleIRsource
     │  
     ├── daqenv             # Virtual environment
-    ├── data_analysis      # Code to analyse data and analysis results (no data yet)
-    ├── data               # Data acquired will be saved here
+    ├── notebooks          # Code to analyse data and analysis results
     ├── plot               # Plots 
-    ├── programs           # Programs to communicate with the instruments and for the data acquisition
-    |    └── instruments   # Classes of the synthetizer and of the acquisition card + useful functions 
-    ├── simulation         # Analysis on simulated waveform to test some components of the code 
+    ├── plot_IQ            # Plots from IQ conversion
+    ├── scripts            # Programs to communicate with the instruments and for the data acquisition
+    |    └── src           # Classes of the synthetizer and of the acquisition card + useful functions 
+    ├── tests              # Some tests for savgol and trigger
     ├── requirements.txt   # Libraries needed to run the code
     └── README.md          # README file
 
 
-## Content of the folders
+## Content of the scripts ans src folders
 
-  * ```acquisition.py```: acquire data using PXIe and a trigger and apply Savitzky–Golay filter
-  * ```analysis.ipynb```: analyze I, Q data to find the best frequency for the acquisition
+  * ```acquisition.py```: acquire data using PXIe and a trigger (edge or immediate)
   * ```continuos_acquisition.py```: acquire data continuously using PXIe 
-  * ```IQ_correction.py```: to calibrate the non linear response of IQ mixer and characterize it
+  * ```join_hdf5.py```: to join many hdf5 files that contain the same datasets/groups
+  * ```logging_config.py```: needed for log files
+  * ```loop.py```: to run some scripts in loop 
+  * ```mixer_cal.py```: for the mixer calibration
+  * ```savgol_filter.py```: to align different sample (needed before the application of the optimum filter)
   * ```scan_freq.py```: perform a scan over a range of frequencies to find the resonances
+  * ```segmentation.py```: to divide in samples a continuos acquisition
   * ```synt_control.py```: to set a frequency for the synthetizer or iterate over different frequencies
   * ```threshold.py```: iterate over different thresholds to select the best one for our signals
 
   * ```FSW_0010.py```: control the synthetizer QuickSynt FSW-0010 
   * ```PXIe_5170R.py```: control the high speed digitizer PXIe-5170R
   * ```utils.py```: generic utility functions
-
-  ## TO DO
-  * ```IQ_processing.py```: correct I, Q and join them
 
  

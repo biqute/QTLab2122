@@ -19,10 +19,10 @@ logger.info('START EXECUTION')
 # lo from synt1 and rf from synt2
 
 ########## CONFIG PARAMETERS
-freq        = 5.345679 #5.345679 #5.380116 #5.638565 #5.869609 #max 6 decimals 
-power       = '20+10 on 1, 20 on 2'
+freq        = 5.63622 #5.865120#, 5.63622 #5.380116 #5.345679 #5.380116 #5.638565 #5.869609 #max 6 decimals 
+power       = '20 on 1, 20 on 2'
 #name       = get_date(file_name = 'mix_cal_' + str(int(freq * 1e6)))
-name        = 'mix_cal_test_' + str(int(freq * 1e6))
+name        = 'mix_cal_' + str(int(freq * 1e6))
 path        = 'data/raw/mix_cal/mixer1/'
 sample_rate = 1e3              
 total_time  = 1
@@ -34,7 +34,7 @@ config = {
     'path'        : path                             , # name of the file where data will be saved
     'file_name'   : name                             , # name of the file where data will be saved
     'records'     : 1                                , # numer of records to store
-    'channels'    : [0,1]                            , # list of enabled channels
+    'channels'    : [2,3]                        , # list of enabled channels
     'sample_rate' : sample_rate                      , # rate of points sampling of PXIe-5170R in Hz
     'total_time'  : total_time                       , # total acquisition time in seconds
     'length'      : int(total_time * sample_rate)      # length of the record
@@ -71,17 +71,17 @@ for key in trigger:
 with FSWSynt('COM7') as synt:
     synt.set_freq(config['freq1'])
     time.sleep(0.01) #IMPORTANT for real time communication
-    #synt.turn_on()
+    synt.turn_on()
     time.sleep(0.01)
-    print('The current frequency of ' + print(synt.get_ID()) + ' is: ' + str(synt.get_freq()))
+    print('The current frequency of ' + str(synt.get_ID()) + ' is: ' + str(synt.get_freq()))
     logger.debug('The current frequency of the first synthetizer is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 with FSWSynt('COM12') as synt:
     synt.set_freq(config['freq2'])
     time.sleep(0.01) #IMPORTANT for real time communication
-    #synt.turn_on()
+    synt.turn_on()
     time.sleep(0.01)
-    print('The current frequency of ' + print(synt.get_ID()) + ' is: ' + str(synt.get_freq()))
+    print('The current frequency of ' + str(synt.get_ID()) + ' is: ' + str(synt.get_freq()))
     logger.debug('The current frequency of the second synthetizer is: ' + str(synt.get_freq()))    #just to check if the freqency has been set correctly
 
 time.sleep(1)
