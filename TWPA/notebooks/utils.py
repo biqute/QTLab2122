@@ -33,19 +33,35 @@ def storage_hdf5(file, dati, name_dataset):
     return None
 
 
+def bump(k):
+    if k % 100 == 0:
+        return int(k/100) + 1
+    else:
+        return 1
+
 def band_info(f, d):
     N = f.size
-    HPV = max(d) - 3 #da capire bene. forse max(smoothing(d))-3? A -3dB cmq la potenza è dimezzata
-    for i in range(0,N):
-        if d[i] > HPV:
+    gain = max(d)
+    bw = f[d.argmax()+1]- f[d.argmax()]
+    start = f[d.argmax()]
+    for k in range(0, 100000):
+        HPV = gain - 3 * bump(k)
+        for i in range(0,N):
+            if d[i] > HPV:
+                break
+        for j in range(0,N):
+            if d[N-j-1] > HPV:
+                break
+        bw_new = f[N-j] - f[i]
+        gain_new = np.mean(d[i:N-j])
+        start = f[i]
+        if abs(bw_new - bw)/bw < 0.001 and abs((gain_new-gain)/gain) < 0.001 and bw_new > 2e9:
+            print('converged at %dth iteration!' % k)
             break
-    for j in range(0,N):
-        if d[N-j-1] > HPV:
-            break
-
-    bw = f[N-j] - f[i]
-    gain = np.mean(d[i:N-j]) #anche qui: d va lisciato?
-    return gain, bw, f[i]
+        else:
+            gain = gain_new
+            bw = bw_new
+    return gain_new, bw_new, start
 
 def waitUntil(condition):
     wU = True
