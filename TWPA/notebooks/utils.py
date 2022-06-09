@@ -63,6 +63,31 @@ def band_info(f, d):
             bw = bw_new
     return gain_new, bw_new, start
 
+def band_width_info(f, d):
+    N = f.size
+    gain = max(d)
+    bw = f[d.argmax()+1]- f[d.argmax()]
+    start = f[d.argmax()]
+    for k in range(0, 100000):
+        HPV = gain - 3 * bump(k)
+        for i in range(0,N):
+            if d[i] > HPV:
+                break
+        for j in range(0,N):
+            if d[N-j-1] > HPV:
+                break
+        bw_new = f[N-j] - f[i]
+        gain_new = np.mean(d[i:N-j])
+        i1 = i
+        i2 = N-j
+        if abs(bw_new - bw)/bw < 0.001 and abs((gain_new-gain)/gain) < 0.001 and bw_new > 2e9:
+            print('converged at %dth iteration!' % k)
+            break
+        else:
+            gain = gain_new
+            bw = bw_new
+    return bw_new, i1, i2 #the band-width, and the indexes of the array f corresponding to its limits
+
 def waitUntil(condition):
     wU = True
     while wU == True:
