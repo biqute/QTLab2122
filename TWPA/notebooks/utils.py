@@ -81,7 +81,7 @@ def band_width_info(f, d):
         i1 = i
         i2 = N-j
         if abs(bw_new - bw)/bw < 0.001 and abs((gain_new-gain)/gain) < 0.001 and bw_new > 2e9:
-            print('converged at %dth iteration!' % k)
+            #print('converged at %dth iteration!' % k)
             break
         else:
             gain = gain_new
