@@ -32,6 +32,15 @@ def storage_hdf5(file, dati, name_dataset):
             hdf.create_dataset(name_dataset, data=dati, compression='gzip', compression_opts=9)
     return None
 
+def log_mean(a):
+  a = np.array(a)
+  return 10*(math.log10(np.sum(10**(a/10)))-math.log10(a.size))
+
+def log_std(a):
+  a = np.array(a)
+  mu_dB = log_mean(a)
+  mu = 10**(mu_dB/10)
+  return 5*(math.log10(np.sum((10**(a/10)-mu)**2))-math.log10(a.size))
 
 def bump(k):
     if k % 100 == 0:
@@ -53,7 +62,7 @@ def band_info(f, d):
             if d[N-j-1] > HPV:
                 break
         bw_new = f[N-j] - f[i]
-        gain_new = np.mean(d[i:N-j])
+        gain_new = np.log_mean(d[i:N-j-1])
         start = f[i]
         if abs(bw_new - bw)/bw < 0.001 and abs((gain_new-gain)/gain) < 0.001 and bw_new > 2e9:
             print('converged at %dth iteration!' % k)
@@ -77,9 +86,9 @@ def band_width_info(f, d):
             if d[N-j-1] > HPV:
                 break
         bw_new = f[N-j] - f[i]
-        gain_new = np.mean(d[i:N-j])
+        gain_new = log_mean(d[i:N-j-1])
         i1 = i
-        i2 = N-j
+        i2 = N-j-1
         if abs(bw_new - bw)/bw < 0.001 and abs((gain_new-gain)/gain) < 0.001 and bw_new > 2e9:
             #print('converged at %dth iteration!' % k)
             break
