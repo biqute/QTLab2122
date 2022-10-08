@@ -247,6 +247,8 @@ def derivative_trigger_matrix(sample, window_ma=20, wl=60, poly=4, n=2, polarity
         derivative_func = savgol_filter(sample[i], wl, poly, n, delta=1, mode='mirror')
 
         x2 = begin+1+(derivative_func[begin+1:end-1].argmin())
+        # if x2>start:
+        #     x2=start
 
         if vertex:
             y1 = derivative_func[x2-1]

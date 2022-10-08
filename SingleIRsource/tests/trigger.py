@@ -157,6 +157,9 @@ def derivative_trigger_matrix(sample, window_ma, poly=3, n=2, mv='convolve', ver
 
     if mv == 'cumsum':
         moving_averages = moving_average(sample, window_ma)
+    
+    if mv == 'savgol':
+        moving_averages = savgol_filter(sample, window_length, poly, 0, delta=1) 
 
     index_mins = []
     for ii in range(len(sample)):
@@ -242,6 +245,9 @@ def derivative_trigger_matrix2(sample, window_ma, wl=13, poly=3, n=2, mv='convol
 
     if mv == 'cumsum':
         moving_averages = moving_average(sample, window_ma)
+
+    if mv == 'savgol':
+        moving_averages = savgol_filter(sample, wl, poly, 0, delta=1) 
 
     if mv == 'None':
         moving_averages = sample
